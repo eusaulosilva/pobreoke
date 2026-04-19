@@ -1,0 +1,30 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body,
+html,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: #0f0f1a;
+  /* Mantém o fundo preto em tudo */
+}
+
+/* Se você estiver usando Bootstrap ou alguma classe container no App.jsx */
+.container-fluid {
+  padding: 0 !important;
+  margin: 0 !important;
+  width: 100% !important;
+}
+
+.app-main-container {
+  width: 100%;
+  max-width: 100% !important;
+  /* Remove o limite de largura */
+  min-height: 100vh;
+}

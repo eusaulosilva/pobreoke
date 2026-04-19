@@ -1,0 +1,190 @@
+/* src/views/Home.css */
+
+.home-container {
+  min-height: 100vh;
+  width: 100vw;
+  background-color: var(--bg-dark);
+  /* Seu #020617 */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.home-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+/* Título com seu Neon Pink */
+.neon-title {
+  font-size: 3rem;
+  color: var(--text-main);
+  text-transform: uppercase;
+  letter-spacing: 5px;
+  text-shadow:
+    0 0 10px var(--neon-pink),
+    0 0 20px var(--neon-pink);
+  margin-bottom: 10px;
+}
+
+.home-header p {
+  color: var(--neon-cyan);
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* Grid ocupando espaço lateral no mobile */
+.menu-grid {
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Cards usando seu --bg-card (#0f172a) */
+.menu-card {
+  background: var(--bg-card);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  /* Efeito de vidro opcional */
+  backdrop-filter: blur(10px);
+}
+
+/* Hover usando seu Neon Cyan */
+.menu-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  border-color: var(--neon-purple);
+  box-shadow: 0 0 20px rgba(122, 34, 238, 0.2);
+}
+
+.card-icon {
+  font-size: 2.5rem;
+  margin-right: 20px;
+}
+
+.card-content h3 {
+  color: var(--text-main);
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.card-content p {
+  color: var(--text-muted);
+  margin: 4px 0 0 0;
+  font-size: 0.95rem;
+}
+
+/* Seta com Neon Purple */
+.arrow {
+  margin-left: auto;
+  color: var(--neon-purple);
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.menu-card:hover .arrow {
+  transform: translateX(5px);
+  color: var(--neon-cyan);
+}
+
+
+
+
+
+
+/* --- Título Responsivo --- */
+.neon-title {
+  /* clamp(tamanho_minimo, tamanho_ideal, tamanho_maximo) */
+  font-size: clamp(1.8rem, 8vw, 3.5rem);
+  color: var(--text-main);
+  text-transform: uppercase;
+  letter-spacing: clamp(2px, 1vw, 5px);
+  text-shadow: 0 0 10px var(--neon-pink), 0 0 20px var(--neon-pink);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.mic-icon {
+  font-size: 0.9em;
+  filter: drop-shadow(0 0 8px var(--neon-pink));
+}
+
+/* --- Container e Grid Responsivos --- */
+.home-container {
+  min-height: 100vh;
+  width: 100%;
+  /* Ocupa a largura disponível */
+  background-color: var(--bg-dark);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(10px, 5vw, 40px);
+  /* Padding diminui no mobile */
+  box-sizing: border-box;
+}
+
+.menu-grid {
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(10px, 2vh, 20px);
+  /* Espaço entre cards menor no mobile */
+}
+
+/* --- Cards Adaptáveis --- */
+.menu-card {
+  background: var(--bg-card);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: clamp(15px, 4vw, 24px);
+  /* Padding interno flexível */
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.card-icon {
+  font-size: clamp(1.5rem, 6vw, 2.5rem);
+  /* Ícone diminui no mobile */
+  margin-right: clamp(10px, 4vw, 20px);
+}
+
+.card-content h3 {
+  font-size: clamp(1rem, 4vw, 1.4rem);
+}
+
+.card-content p {
+  font-size: clamp(0.75rem, 3vw, 0.95rem);
+}
+
+/* --- Ajuste específico para celulares muito pequenos --- */
+@media (max-width: 380px) {
+  .home-header p {
+    font-size: 0.7rem;
+  }
+
+  .arrow {
+    display: none;
+    /* Esconde a seta para ganhar espaço */
+  }
+}

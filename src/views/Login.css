@@ -1,0 +1,73 @@
+.login-page {
+    height: 100vh;
+    width: 100vw;
+    background: radial-gradient(circle, #0f172a 0%, #020617 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.login-card {
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid #1e293b;
+    border-radius: 30px;
+    padding: 50px;
+    width: 400px;
+    text-align: center;
+    border-top: 4px solid var(--neon-cyan);
+}
+
+.login-header h1 {
+    font-size: 2.5rem;
+    font-weight: 900;
+    margin: 0;
+    letter-spacing: 3px;
+}
+
+.login-header p {
+    color: var(--neon-pink);
+    font-weight: 800;
+    font-size: 0.8rem;
+    letter-spacing: 2px;
+}
+
+.login-body {
+    margin: 40px 0;
+}
+
+.icon-lock {
+    font-size: 3rem;
+    margin-bottom: 15px;
+}
+
+.btn-login-google {
+    width: 100%;
+    background: white;
+    color: #000;
+    border: none;
+    padding: 15px;
+    border-radius: 15px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: 0.3s;
+}
+
+.btn-login-google:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+    background: #f1f1f1;
+}
+
+.btn-login-google img {
+    width: 20px;
+}
+
+.login-footer {
+    margin-top: 30px;
+    opacity: 0.3;
+}
