@@ -1,0 +1,60 @@
+.status-fila-root {
+    /* Utiliza o background escuro e bordas do seu root */
+    background-color: var(--bg-card, #1a1a1a);
+    border: 1px solid var(--border-color, #333);
+    border-radius: 8px;
+    padding: 12px 20px;
+    margin: 15px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.dot-blink {
+    width: 8px;
+    height: 8px;
+    background-color: var(--neon-cyan, #00f2ff);
+    /* Cor ciano do root */
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--neon-cyan, #00f2ff);
+    animation: pulse-glow 2s infinite;
+}
+
+.status-indicator .label {
+    color: var(--text-secondary, #888);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.posicao-valor {
+    color: var(--neon-cyan, #00f2ff);
+    /* Cor ciano do root */
+    font-size: 1.8rem;
+    font-weight: 800;
+    text-shadow: 0 0 10px rgba(0, 242, 255, 0.3);
+}
+
+@keyframes pulse-glow {
+    0% {
+        opacity: 0.5;
+        transform: scale(0.95);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    100% {
+        opacity: 0.5;
+        transform: scale(0.95);
+    }
+}
