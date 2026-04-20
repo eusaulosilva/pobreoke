@@ -16,14 +16,24 @@ export default function Pedido() {
     const [nome, setNome] = useState("");
     const [musica, setMusica] = useState("");
     const [uid, setUid] = useState("");
-    const [noPalco, setNoPalco] = useState({ nome: "Aguardando...", musica: "..." });
 
-    // Estado para o código que o utilizador vai digitar
+    // Estados para controle de sala e interface
+    const [noPalco, setNoPalco] = useState(null);
     const [inputCodigo, setInputCodigo] = useState("");
+    const [roomExists, setRoomExists] = useState(true);
 
     useEffect(() => {
         if (!roomId) return;
 
+        const salaIdFormatado = roomId.toUpperCase();
+        const roomRef = ref(db, `salas/${salaIdFormatado}`);
+
+        // Validação se a sala existe em tempo real
+        const unsubRoom = onValue(roomRef, (snapshot) => {
+            setRoomExists(snapshot.exists());
+        });
+
+        // Gestão de UID do utilizador
         let savedUid = localStorage.getItem("pobreoke_uid");
         if (!savedUid) {
             savedUid = "V-" + Math.random().toString(36).substr(2, 5).toUpperCase();
@@ -31,21 +41,45 @@ export default function Pedido() {
         }
         setUid(savedUid);
 
-        const filaRef = ref(db, `salas/${roomId.toUpperCase()}/fila`);
-        return onValue(filaRef, (snapshot) => {
+        // Monitorização da fila
+        const filaRef = ref(db, `salas/${salaIdFormatado}/fila`);
+        const unsubscribe = onValue(filaRef, (snapshot) => {
             const data = snapshot.val();
             const lista = data ? Object.entries(data).map(([id, val]) => ({ id, ...val })) : [];
+
             setFila(lista);
+
+            // Identificar quem está no palco
+            const cantando = lista.find(item => item.status === "iniciado");
+            if (cantando) {
+                setNoPalco({ nome: cantando.nome, musica: cantando.musica });
+            } else {
+                setNoPalco({ nome: "Livre", musica: "Aguardando próximo cantor..." });
+            }
+        }, (error) => {
+            console.error("Erro ao ler Firebase:", error);
+            setNoPalco({ nome: "Erro", musica: "Sala não encontrada" });
         });
+
+        return () => {
+            unsubRoom();
+            unsubscribe();
+        };
+
     }, [roomId]);
 
-    useEffect(() => {
-        const cantando = fila.find(item => item.status === "iniciado");
-        setNoPalco(cantando ?
-            { nome: cantando.nome, musica: cantando.musica } :
-            { nome: "Aguardando...", musica: "A festa vai começar!" }
+    // Tela exibida caso a sala seja excluída ou o código seja inválido
+    if (!roomExists && roomId) {
+        return (
+            <div className="container-fluid min-vh-100 d-flex flex-column justify-content-center align-items-center bg-black text-center p-4">
+                <h1 style={{ color: 'var(--neon-pink)', fontWeight: '900' }}>SALA ENCERRADA</h1>
+                <p className="text-white mt-3">Esta sala não existe ou foi finalizada pelo DJ.</p>
+                <button className="btn-photo-purple-search mt-4 px-5" onClick={() => navigate("/pedir")}>
+                    SAIR DA SALA
+                </button>
+            </div>
         );
-    }, [fila]);
+    }
 
     const handleAcederSala = (e) => {
         e.preventDefault();
@@ -54,14 +88,13 @@ export default function Pedido() {
         }
     };
 
-    // --- ECRÃ DE ENTRADA MANUAL (Quando não há roomId na URL) ---
+    // Tela inicial para inserir o código da sala
     if (!roomId) {
         return (
-            <div className="container-fluid min-vh-100 d-flex justify-content-center align-items-center" style={{ backgroundColor: '#020617' }}>
-                <div className="admin-glass-panel p-5 text-center shadow-lg" style={{ maxWidth: '400px', border: '1px solid #1e293b' }}>
+            <div className="container-fluid container min-vh-100 d-flex justify-content-center align-items-center" style={{ backgroundColor: '#020617' }}>
+                <div className="admin-glass-panel p-5 welcome-card text-center shadow-lg" style={{ maxWidth: '400px', border: '1px solid #1e293b' }}>
                     <h2 style={{ color: 'var(--neon-pink)', fontWeight: '900' }} className="mb-4">POBREOKÊ</h2>
-                    <p className=" small mb-4">Insere o código da sala para pedires a tua música:</p>
-
+                    <p className="text-white small mb-4">Insere o código da sala:</p>
                     <form onSubmit={handleAcederSala}>
                         <input
                             type="text"
@@ -72,16 +105,13 @@ export default function Pedido() {
                             style={{ letterSpacing: '5px', textTransform: 'uppercase' }}
                             maxLength={6}
                         />
-                        <button className="btn-photo-purple-search w-100 py-3 fw-bold">
-                            ENTRAR NA SALA 🎤
-                        </button>
+                        <button className="btn-photo-purple-search w-100 py-3 fw-bold">ENTRAR 🎤</button>
                     </form>
                 </div>
             </div>
         );
     }
 
-    // --- RENDERIZAÇÃO NORMAL DA FILA ---
     const bloqueado = fila.some(item => item.uid === uid && (item.status === "aguardando" || item.status === "iniciado"));
     const posicaoNaFila = fila.filter(item => item.status === "aguardando").findIndex(item => item.uid === uid) + 1;
 
@@ -95,11 +125,26 @@ export default function Pedido() {
     };
 
     return (
-        <div className="container-fluid py-4 d-flex justify-content-center">
+        <div className="container-fluid container py-4 d-flex justify-content-center">
             <div className="app-main-container">
-                <Header noPalco={noPalco} />
-                <Formulario nome={nome} setNome={setNome} musica={musica} setMusica={setMusica} adicionarAFila={adicionarAFila} bloqueado={bloqueado} />
+                {noPalco ? (
+                    <Header noPalco={noPalco} />
+                ) : (
+                    <div className="text-center text-white py-3">A carregar palco...</div>
+                )}
+                <Formulario
+                    nome={nome}
+                    setNome={setNome}
+                    musica={musica}
+                    setMusica={setMusica}
+                    adicionarAFila={adicionarAFila}
+                    bloqueado={bloqueado}
+                />
+
                 {posicaoNaFila > 0 && <StatusFila posicao={posicaoNaFila} />}
+
+
+
                 <div className="mt-4">
                     <ListaFila fila={fila} />
                 </div>

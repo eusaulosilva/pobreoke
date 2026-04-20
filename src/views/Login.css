@@ -71,3 +71,41 @@
     margin-top: 30px;
     opacity: 0.3;
 }
+/* Container para garantir a centralização */
+.back-container {
+    margin-top: 50px; /* Aumentado para afastar mais do botão de login */
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.btn-back-home {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    font-size: 0.7rem; /* Reduzido para ficar menor */
+    font-weight: 600;
+    letter-spacing: 1px; /* Espaçamento entre letras para um look mais clean */
+    text-transform: uppercase; /* Deixa o texto mais organizado mesmo sendo pequeno */
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s ease;
+    opacity: 0.4; /* Mais transparente para ser bem secundário */
+}
+
+.btn-back-home .arrow {
+    font-size: 0.9rem;
+    transition: transform 0.3s ease;
+}
+
+/* Efeito Hover */
+.btn-back-home:hover {
+    color: var(--neon-pink); /* Muda para rosa ao passar o rato */
+    opacity: 1;
+}
+
+.btn-back-home:hover .arrow {
+    transform: translateX(-4px);
+}

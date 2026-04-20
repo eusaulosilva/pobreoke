@@ -1,27 +1,55 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { auth } from "../firebase";
-import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import "./Login.css";
 
 export default function Login() {
     const navigate = useNavigate();
 
+    // 1. Redirecionamento Automático: Se já estiver logado, vai direto para o Admin
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            if (user) {
+                navigate("/admin"); //
+            }
+        });
+        return () => unsubscribe();
+    }, [navigate]);
+
+    // 2. Atalho de Teclado: Pressionar a tecla "Esc" volta para a Home (/)
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === "Escape") {
+                navigate("/");
+            }
+        };
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [navigate]);
+
+    // 3. Clique no Fundo: Clicar fora do card de login volta para a Home (/)
+    const handleBackgroundClick = (e) => {
+        // Verifica se o clique foi na div principal e não nos seus filhos (card)
+        if (e.target.classList.contains("login-page")) {
+            navigate("/");
+        }
+    };
+
     const logarComGoogle = async () => {
         const provider = new GoogleAuthProvider();
         try {
             await signInWithPopup(auth, provider);
-            // Após o login, manda para o admin. 
-            // A proteção no Admin.jsx decidirá se ele pode entrar ou não.
-            navigate("/admin");
+            navigate("/admin"); //
         } catch (error) {
             console.error("Erro ao logar:", error);
         }
     };
 
     return (
-        <div className="login-page">
-            <div className="login-card shadow-lg">
+        <div className="login-page" onClick={handleBackgroundClick}>
+            {/* e.stopPropagation evita que o clique dentro do card acione o voltar para a Home */}
+            <div className="login-card shadow-lg" onClick={(e) => e.stopPropagation()}>
                 <div className="login-header">
                     <h1 className="neon-text-cyan">POBREOKÊ</h1>
                     <p>PAINEL DE CONTROLE</p>
@@ -37,6 +65,12 @@ export default function Login() {
                     <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="G" />
                     ENTRAR COM GOOGLE
                 </button>
+
+                <div className="back-container">
+                    <button className="btn-back-home" onClick={() => navigate("/")}>
+                        <span className="arrow">←</span> VOLTAR AO INÍCIO
+                    </button>
+                </div>
 
                 <div className="login-footer">
                     <small>© 2026 Pobreokê System</small>

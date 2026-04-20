@@ -8,6 +8,28 @@ export default function Display() {
     const { roomId } = useParams();
     const [videoId, setVideoId] = useState(null);
     const [noPalco, setNoPalco] = useState({ nome: "AGUARDANDO...", musica: "ESCOLHA UMA MÚSICA" });
+    
+    const [roomExists, setRoomExists] = useState(true); // NOVO ESTADO
+
+    useEffect(() => {
+        if (!roomId) return;
+
+        const roomRef = ref(db, `salas/${roomId.toUpperCase()}`);
+        const unsub = onValue(roomRef, (snapshot) => {
+            setRoomExists(snapshot.exists());
+        });
+
+        return () => unsub();
+    }, [roomId]);
+
+    if (!roomExists && roomId) {
+        return (
+            <div className="display-container bg-black text-center">
+                <h1 className="text-danger fw-bold">SALA INVÁLIDA</h1>
+                <p className="text-white">A conexão com o DJ foi perdida ou o código expirou.</p>
+            </div>
+        );
+    }
 
     useEffect(() => {
         if (!roomId) return;

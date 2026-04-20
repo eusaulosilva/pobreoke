@@ -1,0 +1,126 @@
+/* --- ESTILO NEON PROFISSIONAL ITEMFILA --- */
+
+.admin-neon-card {
+    background-color: #1e293b; /* Azul escuro da foto */
+    border-radius: 16px;
+    padding: 18px 22px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    
+    /* ESPAÇAMENTO ENTRE OS ITENS */
+    margin-bottom: 16px; 
+    
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-left: 6px solid var(--neon-cyan);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    min-width: 0; /* Permite que o texto encolha */
+}
+
+/* Efeito ao passar o rato */
+.admin-neon-card:hover {
+    transform: translateY(-2px);
+    background-color: #243049;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+}
+
+/* Estado Ativo (O que está a cantar agora) */
+.admin-neon-card.active {
+    border-left-color: var(--neon-pink);
+    background-color: #232244;
+    box-shadow: 0 0 20px rgba(236, 72, 153, 0.2);
+}
+
+/* ÁREA DE TEXTO */
+.card-content {
+    flex: 1;
+    min-width: 0; /* Essencial para o truncate (...) */
+    display: flex;
+    flex-direction: column;
+}
+
+.name-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.index {
+    color: var(--neon-cyan);
+    font-weight: 900;
+    font-size: 0.9rem;
+    opacity: 0.7;
+}
+
+.singer-title {
+    color: #ffffff;
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* Corta o texto longo com ... */
+}
+
+.song-subtitle {
+    color: #94a3b8;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    margin-top: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ÁREA DOS BOTÕES (CONTROLOS) */
+.admin-controls-btns {
+    display: flex;
+    gap: 12px;
+    flex-shrink: 0; /* Garante que os botões nunca encolhem */
+}
+
+.btn-play-neon {
+    background: rgba(34, 211, 238, 0.1);
+    color: var(--neon-cyan);
+    border: 2px solid var(--neon-cyan);
+    padding: 8px 20px;
+    border-radius: 10px;
+    font-weight: 800;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: 0.2s;
+}
+
+.btn-play-neon:hover {
+    background: var(--neon-cyan);
+    color: #0f172a;
+    box-shadow: 0 0 15px var(--neon-cyan);
+}
+
+.btn-x-neon {
+    background: rgba(236, 72, 153, 0.1);
+    color: var(--neon-pink);
+    border: 2px solid var(--neon-pink);
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-x-neon:hover {
+    background: var(--neon-pink);
+    color: white;
+    box-shadow: 0 0 15px var(--neon-pink);
+}

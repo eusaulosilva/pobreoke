@@ -1,24 +1,29 @@
+import React from 'react';
+import { Play, X } from 'lucide-react';
+import './ItemFIla.css';
+
 export default function ItemFila({ item, index, chamarParaPalco, removerDaFila }) {
     const isCurrentlyPlaying = item.status === "iniciado";
 
     return (
-        <div
-            className={`queue-item ${isCurrentlyPlaying ? 'playing' : ''}`}
-            style={{ borderColor: isCurrentlyPlaying ? "var(--neon-pink)" : "var(--neon-cyan)" }}
-        >
-            <div className="queue-info">
+        <div className={`admin-neon-card ${isCurrentlyPlaying ? 'active' : ''}`}>
+            <div className="card-content">
                 <div className="name-wrapper">
                     <span className="index">#{index + 1}</span>
-                    <h4 className="singer-name">
-                        {item.nome} {isCurrentlyPlaying && <span className="mic-icon">🎤</span>}
+                    <h4 className="singer-title">
+                        {item.nome} {isCurrentlyPlaying && "🎤"}
                     </h4>
                 </div>
-                <p className="song-name">{item.musica}</p>
+                <p className="song-subtitle">{item.musica}</p>
             </div>
 
-            <div className="admin-controls">
-                <button className="btn-play" onClick={() => chamarParaPalco(item)}>PLAY</button>
-                <button className="btn-remove" onClick={() => removerDaFila(item.id)}>X</button>
+            <div className="admin-controls-btns">
+                <button className="btn-play-neon" onClick={() => chamarParaPalco(item)}>
+                    <Play size={14} fill="currentColor" /> PLAY
+                </button>
+                <button className="btn-x-neon" onClick={() => removerDaFila(item.id)}>
+                    <X size={18} />
+                </button>
             </div>
         </div>
     );
