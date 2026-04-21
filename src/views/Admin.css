@@ -145,7 +145,7 @@
 }
 
 /* 6. BOTÕES INTERNOS E FORMULÁRIOS */
-.btn-reset-data {
+.btn-reset-data-red {
     background: transparent;
     border: 1px solid var(--neon-red);
     color: var(--neon-red);
@@ -156,7 +156,24 @@
     cursor: pointer;
     transition: 0.3s;
 }
-
+.btn-reset-data-red:hover {
+    box-shadow: 0 0 12px var(--neon-red);
+}
+.btn-reset-data-pourple {
+    background: transparent;
+    border: 1px solid var(--neon-purple); /* Roxo neon */
+    color: var(--neon-purple);
+    padding: 5px 12px;
+    border-radius: 8px;
+    font-weight: 800;
+    font-size: 0.65rem;
+    cursor: pointer;
+    transition: 0.3s;
+}
+.btn-reset-data-pourple:hover {
+  
+    box-shadow: 0 0 12px var(--neon-purple);
+}
 .btn-photo-purple-search {
     background: #3b2271;
     border: none;

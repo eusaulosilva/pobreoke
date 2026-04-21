@@ -72,6 +72,12 @@
 }
 
 .status-brand-neon-purple {
+  font-size: clamp(2.5rem, 12vw, 5rem) !important;
+  font-weight: 900 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 8px !important;
+  margin-bottom: 30px;
+  text-align: center;
   color: var(--neon-purple) !important;
   text-shadow:
     0 0 15px rgba(168, 85, 247, 0.8),

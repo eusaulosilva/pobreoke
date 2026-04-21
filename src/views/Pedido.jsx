@@ -120,7 +120,7 @@ export default function Pedido() {
     }
 
     // Verifica se o usuário já tem um pedido ativo (aguardando ou cantando)
-    const bloqueado = fila.some(item => item.uid === uid && (item.status === "aguardando" || item.status === "iniciado"));
+    const bloqueado = fila.some(item => item.uid !== uid && (item.status === "aguardando" || item.status === "iniciado"));
     const posicaoNaFila = fila.filter(item => item.status === "aguardando").findIndex(item => item.uid === uid) + 1;
 
     const adicionarAFila = (e) => {

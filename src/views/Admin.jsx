@@ -6,7 +6,7 @@ import "./Admin.css";
 import { useNavigate } from "react-router-dom";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { QRCodeCanvas } from "qrcode.react";
-import { Play, SkipForward, Trash2, LogOut, QrCode, Search, Square, Monitor, Link } from 'lucide-react';
+import { Play, SkipForward, Power, LogOut, QrCode, Search, Square, Monitor, Link } from 'lucide-react';
 import ItemFila from "../components/ItemFIla";
 
 const YOUTUBE_API_KEY = import.meta.env.VITE_YOUTUBE_KEY;
@@ -162,6 +162,29 @@ export default function Admin() {
         navigator.clipboard.writeText(qrValue);
         alert("Link copiado com sucesso!");
     };
+    const removerEChamarProximo = (idRemovido) => {
+        // 1. Finaliza a música que o admin clicou para remover
+        atualizarStatus(idRemovido, "finalizado");
+
+        // 2. Para a TV imediatamente limpando o vídeo atual
+        if (roomCode) {
+            update(ref(db, `salas/${roomCode}/configuracao`), { videoAtual: null });
+        }
+
+        // 3. Busca quem é o próximo da fila (que não seja o que acabou de ser removido)
+        const proximo = fila.find(item => item.id !== idRemovido && item.status === "aguardando");
+
+        // 4. Se existir uma próxima pessoa, chama-a automaticamente
+        if (proximo) {
+            chamarProximo(proximo);
+        } else {
+            // Se não houver ninguém na fila, limpa também os campos de pesquisa
+            setArtista("");
+            setMusica("");
+            setVideos([]);
+        }
+    };
+
 
     const linkPedidos = `${window.location.origin}/pedir/${roomCode}`;
     const linkDisplay = `${window.location.origin}/display/${roomCode}`;
@@ -231,7 +254,7 @@ export default function Admin() {
                                     <span className="text-white mx-3 opacity-50">|</span>
                                     <span className={`label-header cursor-pointer ${abaAtiva === 'historico' ? 'text-white' : 'opacity-50'}`} onClick={() => setAbaAtiva('historico')}>HISTÓRICO</span>
                                 </div>
-                                <button className="btn-reset-data d-flex align-items-center gap-2" onClick={encerrarNoite}><Trash2 size={16} /> Limpar</button>
+                                <button className="btn-reset-data-pourple d-flex align-items-center gap-2" onClick={encerrarNoite}><Power size={16} /> Encerrar</button>
                             </div>
                             <div className="panel-body-scroll">
                                 {abaAtiva === 'fila' ? (
@@ -242,7 +265,7 @@ export default function Admin() {
                                                 item={item}
                                                 index={idx}
                                                 chamarParaPalco={chamarProximo}
-                                                removerDaFila={(id) => atualizarStatus(id, 'finalizado')}
+                                                removerDaFila={removerEChamarProximo}
                                             />
                                         ))
                                 ) : (
@@ -264,7 +287,7 @@ export default function Admin() {
                         <div className="admin-glass-panel bg-dark-panel">
                             <div className="panel-header d-flex justify-content-between align-items-center">
                                 <span className="label-header text-purple">BUSCAR KARAOKÊ</span>
-                                <button className="btn-reset-data d-flex align-items-center gap-2" onClick={() => update(ref(db, `salas/${roomCode}/configuracao`), { videoAtual: null })}><Square size={14} /> PARAR TV</button>
+                                <button className="btn-reset-data-red d-flex align-items-center gap-2" onClick={() => update(ref(db, `salas/${roomCode}/configuracao`), { videoAtual: null })}><Square size={14} /> PARAR TV</button>
                             </div>
                             <div className="panel-body-scroll">
                                 <form onSubmit={pesquisarYoutube} className="mb-4">

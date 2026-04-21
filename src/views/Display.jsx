@@ -96,8 +96,8 @@ export default function Display() {
                 ></iframe>
 
                 <div className="overlay-footer">
-                    <span className="badge-ao-vivo fw-bold me-3">NO PALCO 🎤</span>
-                    <span className="info-text fs-4 fw-bold">
+                    <span className="badge-ao-vivo fw-bold ">NO PALCO 🎤</span>
+                    <span className="info-text fw-bold">
                         {noPalco.nome} — <span style={{ color: 'var(--neon-pink)' }}>{noPalco.musica}</span>
                     </span>
                 </div>
