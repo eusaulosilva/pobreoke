@@ -132,6 +132,11 @@
     position: absolute;
     bottom: 20px;
     left: 20px;
+    
+    /* Evita que o elemento passe do tamanho da tela (deixando 20px de respiro na direita também) */
+    max-width: calc(100vw - 40px); 
+    box-sizing: border-box; /* Garante que o padding não quebre o tamanho total */
+    
     background: rgba(2, 6, 23, 0.9);
     padding: 20px 20px;
     border-radius: 20px;
@@ -142,7 +147,6 @@
     gap: 20px;
     box-shadow: 0 15px 50px rgba(0, 0, 0, 0.8);
 }
-
 /* --- TELA DE TV DESCONECTADA & CARREGAMENTO --- */
 .display-status-wrapper.loading-bg {
     background: #000;
@@ -228,4 +232,14 @@
         0 0 30px rgba(34, 211, 238, 0.4);
     text-align: center;
     animation: entradaSuave 0.8s ease-out;
+}
+@media (max-width: 768px) {
+    .overlay-footer {
+        padding: 12px 15px; /* Diminui o espaço interno */
+        gap: 10px;          /* Diminui o espaço entre os elementos (foto, nome, etc) */
+        bottom: 15px;       /* Fica um pouco mais perto da borda de baixo */
+        left: 15px;         /* Fica um pouco mais perto da borda da esquerda */
+        border-radius: 15px;
+        max-width: calc(100vw - 30px);
+    }
 }
