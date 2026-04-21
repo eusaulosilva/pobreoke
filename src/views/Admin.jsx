@@ -151,7 +151,7 @@ export default function Admin() {
                         🚀 CRIAR SALA DE KARAOKÊ
                     </button>
 
-                    <button className="btn-reset-data w-100 py-2 mt-2" onClick={deslogar}>
+                    <button className="btn-reset-data-red w-100 py-2 mt-2" onClick={deslogar}>
                         SAIR DA CONTA
                     </button>
                 </div>
