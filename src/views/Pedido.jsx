@@ -120,19 +120,19 @@ export default function Pedido() {
     }
 
     // Verifica se o usuário já tem um pedido ativo (aguardando ou cantando)
-    const bloqueado = fila.some(item => item.uid !== uid && (item.status === "aguardando" || item.status === "iniciado"));
+    const bloqueado = fila.some(item => item.uid === uid && (item.status === "aguardando" || item.status === "iniciado"));
     const posicaoNaFila = fila.filter(item => item.status === "aguardando").findIndex(item => item.uid === uid) + 1;
 
     const adicionarAFila = (e) => {
         e.preventDefault();
         if (bloqueado) return alert("Já estás na fila!");
-        
+
         // Envia para o Firebase sempre em letras maiúsculas
         push(ref(db, `salas/${roomId.toUpperCase()}/fila`), {
-            uid, 
-            nome, 
-            musica, 
-            status: "aguardando", 
+            uid,
+            nome,
+            musica,
+            status: "aguardando",
             timestamp: Date.now()
         });
         setMusica("");
@@ -147,7 +147,7 @@ export default function Pedido() {
                     ) : (
                         <div className="text-center text-white py-3">A carregar palco...</div>
                     )}
-                    
+
                     <Formulario
                         nome={nome}
                         setNome={setNome}
