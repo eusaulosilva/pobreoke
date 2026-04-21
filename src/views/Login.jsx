@@ -32,11 +32,7 @@ export default function Login() {
     }, [navigate]);
 
     // 3. Clique no Fundo: Clicar fora do card de login volta para a Home (/)
-    const handleBackgroundClick = (e) => {
-        if (e.target.classList.contains("login-page")) {
-            navigate("/");
-        }
-    };
+   
 
     const logarComGoogle = async () => {
         const provider = new GoogleAuthProvider();
@@ -54,7 +50,7 @@ export default function Login() {
     }
 
     return (
-        <div className="login-page" onClick={handleBackgroundClick}>
+        <div className="login-page" >
             <div className="login-card shadow-lg" onClick={(e) => e.stopPropagation()}>
                 <div className="login-header">
                     <h1 className="neon-text-cyan">POBREOKÊ</h1>

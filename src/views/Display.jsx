@@ -69,7 +69,7 @@ export default function Display() {
     if (!roomExists) {
         return (
             <div className="display-status-wrapper error-bg">
-                <h1 className="status-brand-neon-cyan pulse-glow">POBREOKÊ</h1>
+                <h1 className="status-neon-cyan ">POBREOKÊ</h1>
                 <div className="status-card-glass">
                     <h4 className="text-neon-pink mb-3">📺 Sinal Perdido</h4>
                     <p className="mb-4">

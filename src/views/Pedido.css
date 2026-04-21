@@ -297,3 +297,38 @@ button.btn-add:active {
     align-items: center;
     justify-content: center;
 }
+
+/* Estilos para o botão de voltar solicitado */
+.back-container {
+    margin-top: 25px; /* Espaço após o botão principal */
+    display: flex;
+    justify-content: center;
+}
+
+.btn-back-home {
+    background: transparent;
+    border: none;
+    color: #94a3b8; /* Cor cinza suave combinando com o texto do card */
+    font-size: 0.85rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.btn-back-home .arrow {
+    font-size: 1.2rem;
+    transition: transform 0.3s ease;
+}
+
+.btn-back-home:hover {
+    color: #ec4899; /* Rosa neon ao passar o mouse */
+}
+
+.btn-back-home:hover .arrow {
+    transform: translateX(-5px); /* Pequena animação na seta */
+}

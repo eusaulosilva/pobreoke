@@ -23,9 +23,7 @@ export default function Admin() {
     const [modalAberto, setModalAberto] = useState(false);
     const [roomCode, setRoomCode] = useState(null);
     const [qrValue, setQrValue] = useState("");
-    const [fgColor, setFgColor] = useState("#000000"); // Cor do QR
-    const [bgColor, setBgColor] = useState("#ffffff"); // Cor do fundo/moldura
-    const [logoUrl, setLogoUrl] = useState(""); // URL de uma imagem/logo central
+
 
     const qrRef = useRef();
     const navigate = useNavigate();
@@ -33,7 +31,7 @@ export default function Admin() {
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
             if (!currentUser) {
-                navigate("/login");
+                navigate("/login", { replace: true });
             } else {
                 setUser(currentUser);
                 const adminRef = ref(db, `admins/${currentUser.uid}`);

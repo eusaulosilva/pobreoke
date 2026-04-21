@@ -73,7 +73,7 @@ export default function Pedido() {
     if (!roomExists && roomId) {
         return (
             <div className="status-screen-container">
-                <h1 className="status-title-neon error">SALA ENCERRADA</h1>
+                <h1 className="status-neon-red ">SALA ENCERRADA</h1>
                 <div className="status-card">
                     <p>Esta sala não existe ou foi finalizada pelo DJ. Que tal começar uma nova?</p>
                     <button
@@ -96,10 +96,11 @@ export default function Pedido() {
     };
 
     // Tela inicial para inserir o código da sala
+    // Procura por esta condição no Pedido.jsx
     if (!roomId) {
         return (
             <div className="status-screen-container">
-                <h1 className="status-title-neon">POBREOKÊ</h1>
+                <h1 className="status-neon-cyan">POBREOKÊ</h1>
                 <div className="status-card">
                     <p>Digite o código da sala para entrar na cantoria:</p>
                     <form onSubmit={handleAcederSala}>
@@ -114,6 +115,13 @@ export default function Pedido() {
                         />
                         <button className="btn-status-action">ENTRAR NA SALA 🎤</button>
                     </form>
+
+                    {/* Estrutura solicitada inserida aqui */}
+                    <div className="back-container">
+                        <button className="btn-back-home" onClick={() => navigate("/")}>
+                            <span className="arrow">←</span> VOLTAR AO INÍCIO
+                        </button>
+                    </div>
                 </div>
             </div>
         );

@@ -4,6 +4,7 @@
   --neon-pink: #ec4899;
   --neon-purple: #a855f7;
   --neon-red: #ef4444;
+  --neon-white: #f8fafc;
 
   /* --- CORES DE FUNDO (BASE) --- */
   --bg-dark: #020617;
@@ -47,19 +48,7 @@
 }
 
 /* --- LOGO GIGANTE (PADRÃO CIANO) --- */
-.status-brand-neon-cyan {
-  font-size: clamp(2.5rem, 12vw, 5rem) !important;
-  font-weight: 900 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 8px !important;
-  margin-bottom: 30px;
-  text-align: center;
-  /* Ciano é a cor padrão */
-  color: var(--neon-cyan) !important;
-  text-shadow:
-    0 0 15px rgba(34, 211, 238, 0.8),
-    0 0 30px rgba(34, 211, 238, 0.4) !important;
-}
+
 
 /* --- VARIAÇÕES DE COR --- */
 /* Como usar: <h1 className="status-brand-neon pink">TEXTO</h1> */
@@ -146,4 +135,169 @@ body,
   padding: 0 !important;
   margin: 0 !important;
   width: 100% !important;
+}
+
+/* =========================================
+   1. CIANO (--neon-cyan: #22d3ee)
+   ========================================= */
+.status-neon-cyan {
+  font-size: clamp(2.5rem, 12vw, 5rem);
+  font-weight: 900;
+  color: var(--neon-cyan);
+  text-transform: uppercase;
+  letter-spacing: 8px;
+  margin-bottom: 30px;
+  text-align: center;
+  animation:
+    entradaSuave 0.8s ease-out,
+    pulsarNeonRosa 1.5s ease-in-out infinite alternate 0.8s;
+  -webkit-text-stroke: 1.5px var(--neon-purple);
+
+  text-shadow:
+    0 0 10px rgba(168, 85, 247, 0.8),
+    0 0 20px rgba(168, 85, 247, 0.8),
+    0 0 40px rgba(168, 85, 247, 0.6),
+    0 0 80px rgba(168, 85, 247, 0.4);
+}
+
+@keyframes pulsarNeonRosa {
+
+    0% {
+
+        text-shadow:
+            0 0 5px rgba(168, 85, 247, 0.5),
+            0 0 10px rgba(168, 85, 247, 0.5),
+            0 0 20px rgba(168, 85, 247, 0.3),
+            0 0 40px rgba(168, 85, 247, 0.2);
+
+    }
+
+    100% {
+        text-shadow:
+            0 0 15px rgba(168, 85, 247, 1),
+            0 0 30px rgba(168, 85, 247, 0.9),
+            0 0 50px rgba(168, 85, 247, 0.7),
+            0 0 90px rgba(168, 85, 247, 0.5);
+    }
+
+}
+
+/* =========================================
+   2. ROSA (--neon-pink: #ec4899)
+   ========================================= */
+.status-neon-pink {
+  font-size: clamp(2.5rem, 12vw, 5rem);
+  font-weight: 900;
+  color: var(--text-main);
+  text-transform: uppercase;
+  letter-spacing: 8px;
+  margin-bottom: 30px;
+  text-align: center;
+  animation: entradaSuave 0.8s ease-out, pulsarNeonPink 1.5s ease-in-out infinite alternate 0.8s;
+
+  -webkit-text-stroke: 1.5px var(--neon-pink);
+
+  text-shadow:
+    0 0 10px rgba(236, 72, 153, 0.8),
+    0 0 20px rgba(236, 72, 153, 0.8),
+    0 0 40px rgba(236, 72, 153, 0.6),
+    0 0 80px rgba(236, 72, 153, 0.4);
+}
+
+@keyframes pulsarNeonPink {
+  0% {
+    text-shadow:
+      0 0 5px rgba(236, 72, 153, 0.5),
+      0 0 10px rgba(236, 72, 153, 0.5),
+      0 0 20px rgba(236, 72, 153, 0.3),
+      0 0 40px rgba(236, 72, 153, 0.2);
+  }
+
+  100% {
+    text-shadow:
+      0 0 15px rgba(236, 72, 153, 1),
+      0 0 30px rgba(236, 72, 153, 0.9),
+      0 0 50px rgba(236, 72, 153, 0.7),
+      0 0 90px rgba(236, 72, 153, 0.5);
+  }
+}
+
+/* =========================================
+   3. ROXO (--neon-purple: #a855f7)
+   ========================================= */
+.status-neon-purple {
+  font-size: clamp(2.5rem, 12vw, 5rem);
+  font-weight: 900;
+  color: var(--text-main);
+  text-transform: uppercase;
+  letter-spacing: 8px;
+  margin-bottom: 30px;
+  text-align: center;
+  animation: entradaSuave 0.8s ease-out, pulsarNeonPurple 1.5s ease-in-out infinite alternate 0.8s;
+
+  -webkit-text-stroke: 1.5px var(--neon-purple);
+
+  text-shadow:
+    0 0 10px rgba(168, 85, 247, 0.8),
+    0 0 20px rgba(168, 85, 247, 0.8),
+    0 0 40px rgba(168, 85, 247, 0.6),
+    0 0 80px rgba(168, 85, 247, 0.4);
+}
+
+@keyframes pulsarNeonPurple {
+  0% {
+    text-shadow:
+      0 0 5px rgba(168, 85, 247, 0.5),
+      0 0 10px rgba(168, 85, 247, 0.5),
+      0 0 20px rgba(168, 85, 247, 0.3),
+      0 0 40px rgba(168, 85, 247, 0.2);
+  }
+
+  100% {
+    text-shadow:
+      0 0 15px rgba(168, 85, 247, 1),
+      0 0 30px rgba(168, 85, 247, 0.9),
+      0 0 50px rgba(168, 85, 247, 0.7),
+      0 0 90px rgba(168, 85, 247, 0.5);
+  }
+}
+
+/* =========================================
+   4. VERMELHO (--neon-red: #ef4444)
+   ========================================= */
+.status-neon-red {
+  font-size: clamp(2.5rem, 12vw, 5rem);
+  font-weight: 900;
+  color: var(--neon-red);
+  text-transform: uppercase;
+  letter-spacing: 8px;
+  margin-bottom: 30px;
+  text-align: center;
+  animation: entradaSuave 0.8s ease-out, pulsarNeonRed 1.5s ease-in-out infinite alternate 0.8s;
+
+  -webkit-text-stroke: 1.5px var(--neon-cyan);
+
+  text-shadow:
+    0 0 10px rgba(239, 68, 68, 0.8),
+    0 0 20px rgba(239, 68, 68, 0.8),
+    0 0 40px rgba(239, 68, 68, 0.6),
+    0 0 80px rgba(239, 68, 68, 0.4);
+}
+
+@keyframes pulsarNeonRed {
+  0% {
+    text-shadow:
+      0 0 5px rgba(239, 68, 68, 0.5),
+      0 0 10px rgba(239, 68, 68, 0.5),
+      0 0 20px rgba(239, 68, 68, 0.3),
+      0 0 40px rgba(239, 68, 68, 0.2);
+  }
+
+  100% {
+    text-shadow:
+      0 0 15px rgba(239, 68, 68, 1),
+      0 0 30px rgba(239, 68, 68, 0.9),
+      0 0 50px rgba(239, 68, 68, 0.7),
+      0 0 90px rgba(239, 68, 68, 0.5);
+  }
 }
