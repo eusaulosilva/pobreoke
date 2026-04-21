@@ -1,47 +1,74 @@
+/* --- FUNDO E CONTAINER PRINCIPAL --- */
 .login-page {
-    height: 100vh;
-    width: 100vw;
+    min-height: 100dvh;
+    width: 100%;
     background: radial-gradient(circle, #0f172a 0%, #020617 100%);
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
+    padding: 20px;
+    box-sizing: border-box;
+    overflow-x: hidden;
 }
 
+.login-page.loading-bg {
+    background: #020617;
+}
+
+/* --- CARD DE LOGIN --- */
 .login-card {
     background: rgba(15, 23, 42, 0.8);
-    backdrop-filter: blur(10px);
-    border: 1px solid #1e293b;
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(34, 211, 238, 0.2);
     border-radius: 30px;
-    padding: 50px;
-    width: 400px;
+    padding: clamp(30px, 6vw, 50px) clamp(20px, 5vw, 40px);
+    width: 100%;
+    max-width: 420px;
     text-align: center;
-    border-top: 4px solid var(--neon-cyan);
+    border-top: 4px solid #22d3ee;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    animation: entradaSuave 0.6s ease-out forwards;
 }
 
 .login-header h1 {
-    font-size: 2.5rem;
+    font-size: clamp(1.8rem, 6vw, 2.5rem);
     font-weight: 900;
     margin: 0;
     letter-spacing: 3px;
+    color: #22d3ee;
+    text-shadow: 0 0 15px rgba(34, 211, 238, 0.4);
 }
 
 .login-header p {
-    color: var(--neon-pink);
+    color: #ec4899;
     font-weight: 800;
-    font-size: 0.8rem;
+    font-size: clamp(0.7rem, 3vw, 0.85rem);
     letter-spacing: 2px;
+    margin-top: 5px;
 }
 
 .login-body {
-    margin: 40px 0;
+    margin: clamp(25px, 5vh, 40px) 0;
 }
 
 .icon-lock {
-    font-size: 3rem;
+    font-size: clamp(2.2rem, 6vw, 3rem);
     margin-bottom: 15px;
 }
 
+.login-body h3 {
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+}
+
+.login-body .text-muted {
+    color: #94a3b8 !important;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+/* --- BOTÕES --- */
 .btn-login-google {
     width: 100%;
     background: white;
@@ -49,31 +76,28 @@
     border: none;
     padding: 15px;
     border-radius: 15px;
-    font-weight: 700;
+    font-weight: 800;
+    font-size: clamp(0.9rem, 3vw, 1rem);
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-    transition: 0.3s;
+    gap: 12px;
+    transition: all 0.3s ease;
+    cursor: pointer;
 }
 
 .btn-login-google:hover {
     transform: translateY(-3px);
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
-    background: #f1f1f1;
+    background: #f8fafc;
 }
 
 .btn-login-google img {
-    width: 20px;
+    width: 22px;
 }
 
-.login-footer {
-    margin-top: 30px;
-    opacity: 0.3;
-}
-/* Container para garantir a centralização */
 .back-container {
-    margin-top: 50px; /* Aumentado para afastar mais do botão de login */
+    margin-top: 35px;
     display: flex;
     justify-content: center;
     width: 100%;
@@ -83,29 +107,47 @@
     background: none;
     border: none;
     color: #94a3b8;
-    font-size: 0.7rem; /* Reduzido para ficar menor */
-    font-weight: 600;
-    letter-spacing: 1px; /* Espaçamento entre letras para um look mais clean */
-    text-transform: uppercase; /* Deixa o texto mais organizado mesmo sendo pequeno */
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     transition: all 0.3s ease;
-    opacity: 0.4; /* Mais transparente para ser bem secundário */
+    opacity: 0.6;
 }
 
 .btn-back-home .arrow {
-    font-size: 0.9rem;
+    font-size: 1rem;
     transition: transform 0.3s ease;
 }
 
-/* Efeito Hover */
 .btn-back-home:hover {
-    color: var(--neon-pink); /* Muda para rosa ao passar o rato */
+    color: #ec4899;
     opacity: 1;
 }
 
 .btn-back-home:hover .arrow {
-    transform: translateX(-4px);
+    transform: translateX(-5px);
+}
+
+.login-footer {
+    margin-top: 30px;
+    opacity: 0.4;
+    font-size: 0.75rem;
+    color: #94a3b8;
+}
+
+@keyframes entradaSuave {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }

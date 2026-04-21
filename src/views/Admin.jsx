@@ -22,6 +22,10 @@ export default function Admin() {
     const [abaAtiva, setAbaAtiva] = useState("fila");
     const [modalAberto, setModalAberto] = useState(false);
     const [roomCode, setRoomCode] = useState(null);
+    const [qrValue, setQrValue] = useState("");
+    const [fgColor, setFgColor] = useState("#000000"); // Cor do QR
+    const [bgColor, setBgColor] = useState("#ffffff"); // Cor do fundo/moldura
+    const [logoUrl, setLogoUrl] = useState(""); // URL de uma imagem/logo central
 
     const qrRef = useRef();
     const navigate = useNavigate();
@@ -49,6 +53,9 @@ export default function Admin() {
 
     useEffect(() => {
         if (!roomCode) return;
+        if (roomCode) {
+            setQrValue(`${window.location.origin}/pedir/${roomCode}`);
+        }
         const salaRef = ref(db, `salas/${roomCode}/fila`);
         return onValue(salaRef, (snapshot) => {
             const data = snapshot.val();
@@ -131,24 +138,30 @@ export default function Admin() {
     };
 
     if (carregando) return <div className="text-white text-center mt-5">A preparar os teus discos...</div>;
-
     if (!roomCode) {
         return (
-            <div className="admin-page-container d-flex justify-content-center align-items-center">
-                {/* Mude a linha abaixo adicionando 'welcome-card' e removendo o style */}
-                <div className="admin-glass-panel welcome-card p-5 text-center">
-                    <h2 className="text-white mb-4 fw-bold">
-                        BEM-VINDO AO <span style={{ color: 'var(--neon-pink)' }}>POBREOKÊ</span>
+            <div className="admin-welcome-screen">
+                <div className="admin-glass-panel welcome-card text-center shadow-lg">
+                    <h2 className="welcome-title mb-4">
+                        BEM-VINDO AO <span className="text-neon-pink">POBREOKÊ</span>
                     </h2>
-                    <p className="text-white mb-5">Olá, DJ! Cria a tua sala única agora mesmo.</p>
+                    <p className="welcome-subtitle mb-5">Olá, DJ! Cria a tua sala única agora mesmo.</p>
+
                     <button className="btn-photo-purple-search w-100 py-3 mb-3 d-flex align-items-center justify-content-center gap-2" onClick={criarNovaSala}>
                         🚀 CRIAR SALA DE KARAOKÊ
                     </button>
-                    <button className="btn-reset-data w-100" onClick={deslogar}>SAIR DA CONTA</button>
+
+                    <button className="btn-reset-data w-100 py-2 mt-2" onClick={deslogar}>
+                        SAIR DA CONTA
+                    </button>
                 </div>
             </div>
         );
     }
+    const copiarLink = () => {
+        navigator.clipboard.writeText(qrValue);
+        alert("Link copiado com sucesso!");
+    };
 
     const linkPedidos = `${window.location.origin}/pedir/${roomCode}`;
     const linkDisplay = `${window.location.origin}/display/${roomCode}`;
@@ -156,49 +169,53 @@ export default function Admin() {
     return (
         <div className="admin-page-container">
             <div className="container-fluid d-flex flex-column h-100">
-
-                <header className="d-flex justify-content-between align-items-start mb-4">
-                    <div>
-                        <h2 className="text-white mb-2" style={{ fontWeight: '900' }}>
-                            SALA ATIVA: <span style={{ color: 'var(--neon-cyan)' }}>{roomCode}</span>
+                <header className="admin-header">
+                    <div className="header-title-zone">
+                        <h2 className="room-title">
+                            SALA: <span className="neon-text-cyan">{roomCode}</span>
                         </h2>
-                        <div className="d-flex gap-3">
-                            <button className="btn-reset-data d-flex align-items-center gap-2" onClick={() => window.open(linkPedidos, '_blank')} style={{ borderColor: 'var(--neon-cyan)', color: 'var(--neon-cyan)' }}>
-                                <Link size={14} /> PEDIDOS
-                            </button>
-                            <button className="btn-reset-data d-flex align-items-center gap-2" onClick={() => window.open(linkDisplay, '_blank')} style={{ borderColor: 'var(--neon-pink)', color: 'var(--neon-pink)' }}>
-                                <Monitor size={14} /> TV
-                            </button>
-                        </div>
                     </div>
-                    <div className="d-flex gap-3">
-                        <button className="btn-action-cyan" onClick={() => setModalAberto(true)}>
-                            <QrCode size={16} /> Gerar QR
+
+                    <div className="header-actions-zone">
+                        <button className="btn-action-cyan" onClick={() => window.open(linkPedidos, '_blank')}>
+                            <Link size={14} /> PEDIDOS
                         </button>
-                        <button className="btn-reset-data d-flex align-items-center gap-2" onClick={deslogar} style={{ borderColor: '#ef4444', color: '#ef4444' }}><LogOut size={16} /> Sair</button>
+                        <button className="btn-action-pink" onClick={() => window.open(linkDisplay, '_blank')}>
+                            <Monitor size={14} /> TV
+                        </button>
+                        <button className="btn-action-cyan" onClick={() => setModalAberto(true)}>
+                            <QrCode size={16} /> QR
+                        </button>
+                        <button className="btn-action-red" onClick={deslogar}>
+                            <LogOut size={16} /> SAIR
+                        </button>
                     </div>
                 </header>
 
                 {modalAberto && (
                     <div className="modal-overlay" onClick={() => setModalAberto(false)}>
                         <div className="modal-content-neon" onClick={(e) => e.stopPropagation()}>
-                            {/* Botão de fechar (X) */}
                             <button className="modal-close" onClick={() => setModalAberto(false)}>&times;</button>
-
                             <h3 className="text-white fw-bold mb-4">Acesso à Sala</h3>
 
-                            <div className="qr-section mb-2" ref={qrRef}>
-                                {/* O QR Code propriamente dito */}
+                            <div className="qr-section" ref={qrRef}>
                                 <div className="qr-wrapper bg-white p-3 rounded-4 mb-4 d-inline-block">
                                     <QRCodeCanvas value={linkPedidos} size={200} level={"H"} />
                                 </div>
 
-                                <p className="text-white opacity-50 small mb-4">
-                                    Partilha este código para os teus convidados pedirem músicas.
-                                </p>
+                                <div className="copy-link-container mb-4">
+                                    <input
+                                        type="text"
+                                        className="photo-style-input text-center"
+                                        value={linkPedidos}
+                                        readOnly
+                                    />
+                                    <button className="btn-copy-neon" onClick={copiarLink}>
+                                        COPIAR LINK
+                                    </button>
+                                </div>
 
-                                {/* Botão de Download */}
-                                <button className="btn-photo-purple-search w-100 py-3" onClick={downloadQRCode}>
+                                <button className="btn-photo-purple-search w-100 py-3 mt-2" onClick={downloadQRCode}>
                                     BAIXAR QR HD
                                 </button>
                             </div>

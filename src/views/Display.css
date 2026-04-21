@@ -1,64 +1,22 @@
-/* src/components/Display.css */
+/* --- 1. GERAL --- */
 .display-container {
     background-color: #020617;
-    min-height: 90vh;
+    /* var(--dark-bg) */
+    min-height: 100dvh;
+    width: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     color: #fff;
-
-
+    padding: 20px;
+    text-align: center;
+    font-family: 'Inter', sans-serif;
+    overflow: hidden;
 }
 
-.display-now {
-    background: linear-gradient(135deg, #4c1d95, #831843);
-    width: 100%;
-    max-width: 1200px;
-    padding: 60px 20px;
-    border-radius: 40px;
-    border: 4px solid var(--neon-pink);
-    box-shadow: 0 0 50px rgba(236, 72, 153, 0.4);
-}
-
-.display-label {
-    color: var(--neon-cyan);
-    font-size: 1.5rem;
-    font-weight: bold;
-    letter-spacing: 5px;
-}
-
-.display-singer {
-    font-size: clamp(3rem, 10vw, 6rem);
-    /* Fica GIGANTE */
-    margin: 20px 0;
-    text-transform: uppercase;
-    text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
-}
-
-.display-song {
-    font-size: clamp(1.5rem, 4vw, 3rem);
-    color: #cbd5e1;
-}
-
-.display-item {
-    background: rgba(15, 23, 42, 0.8);
-    border: 1px solid var(--neon-cyan);
-    padding: 15px 25px;
-    border-radius: 50px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    font-size: 1.2rem;
-    animation: slideIn 0.5s ease-out;
-}
-
-.display-index {
-    color: var(--neon-cyan);
-    font-weight: bold;
-}
-
-@keyframes slideIn {
+/* --- ANIMAÇÕES --- */
+@keyframes entradaSuave {
     from {
         opacity: 0;
         transform: translateY(20px);
@@ -70,61 +28,90 @@
     }
 }
 
-.display-original-wrapper {
-    min-height: 100vh;
-    background: radial-gradient(circle, #0f172a 0%, #020617 100%);
-    color: white;
-    padding: 60px;
+@keyframes pulsarNeon {
+
+    0%,
+    100% {
+        box-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
+        border-color: #06b6d4;
+    }
+
+    50% {
+        box-shadow: 0 0 40px rgba(6, 182, 212, 0.7);
+        border-color: #fff;
+    }
 }
 
-.display-card {
-    background: rgba(15, 23, 42, 0.7);
-    border-radius: 40px;
-    padding: 50px;
-    border: 1px solid #1e293b;
-    height: 100%;
-}
-
-.main-stage {
-    border-left: 12px solid var(--neon-pink);
-}
-
-.next-queue {
-    border-left: 12px solid var(--neon-cyan);
-}
-
-.label-top {
-    color: #64748b;
+/* --- ELEMENTOS DA TELA PRINCIPAL --- */
+.display-brand {
     font-weight: 900;
-    letter-spacing: 3px;
-    font-size: 1rem;
-}
-
-.singer-name-big {
-    font-size: 5rem;
-    font-weight: 900;
-    margin: 20px 0;
-}
-
-.song-name-big {
-    font-size: 2rem;
-    color: var(--neon-pink);
+    letter-spacing: 8px;
+    color: #06b6d4;
+    font-size: clamp(1.5rem, 5vw, 3.5rem);
+    margin-bottom: 2rem;
     text-transform: uppercase;
+    text-shadow: 0 0 10px #06b6d4;
+    animation: entradaSuave 0.8s ease-out forwards;
 }
 
-.queue-item-row {
-    padding: 20px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    font-size: 2.2rem;
+.display-now {
+    background: linear-gradient(145deg, #2e1065, #701a75);
+    width: 100%;
+    max-width: 1000px;
+    padding: clamp(40px, 8vh, 80px) 20px;
+    border-radius: 40px;
+    border: 4px solid #ec4899;
+    box-shadow: 0 0 60px rgba(236, 72, 153, 0.3);
+    margin-bottom: 3rem;
+    animation: entradaSuave 1s ease-out 0.2s forwards;
+    opacity: 0;
 }
 
-.q-idx {
-    color: var(--neon-cyan);
+.display-label {
+    color: #06b6d4;
+    font-size: clamp(0.9rem, 2vw, 1.4rem);
+    font-weight: 800;
+    letter-spacing: 4px;
+    margin-bottom: 15px;
+    display: block;
+}
+
+.display-singer {
+    font-size: clamp(2.5rem, 10vw, 7rem);
     font-weight: 900;
-    margin-right: 20px;
+    text-transform: uppercase;
+    line-height: 1;
+    margin: 10px 0;
+    text-shadow: 0 0 30px rgba(255, 255, 255, 0.4);
 }
 
-.display-fullscreen-player {
+.display-song {
+    font-size: clamp(1.2rem, 4vw, 3rem);
+    color: #e2e8f0;
+    font-weight: 300;
+}
+
+.container-sala {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    background: rgba(15, 23, 42, 0.8);
+    border: 2px solid #06b6d4;
+    padding: 12px 35px;
+    border-radius: 100px;
+    color: #06b6d4;
+    font-weight: 900;
+    font-size: clamp(1rem, 3vw, 1.8rem);
+    letter-spacing: 3px;
+    animation: pulsarNeon 3s infinite ease-in-out, entradaSuave 1s ease-out 0.4s forwards;
+    opacity: 0;
+    max-width: 90%;
+    margin: 0 auto;
+}
+
+/* --- PLAYER DE VÍDEO (Overlay) --- */
+.video-full-screen-container {
     position: fixed;
     top: 0;
     left: 0;
@@ -134,91 +121,111 @@
     z-index: 9999;
 }
 
-.video-overlay-info {
-    position: absolute;
-    bottom: 40px;
-    left: 40px;
-    background: rgba(2, 6, 23, 0.9);
-    padding: 25px 40px;
-    border-radius: 25px;
-    border-left: 8px solid var(--neon-pink);
-    color: white;
-    font-size: 2rem;
-    font-weight: 800;
-    display: flex;
-    align-items: center;
-    gap: 20px;
-}
-
-.badge-live {
-    background: var(--neon-pink);
-    font-size: 1rem;
-    padding: 5px 12px;
-    border-radius: 8px;
-    animation: blink 1s infinite;
-}
-
-@keyframes blink {
-    50% {
-        opacity: 0;
-    }
-}
-
-/* Container que cobre TUDO */
-.video-full-screen-container {
-    position: fixed;
-    /* Fixa na tela ignorando outros elementos */
-    top: 0;
-    left: 0;
-    width: 100vw;
-    /* 100% da largura da janela */
-    height: 100vh;
-    /* 100% da altura da janela */
-    background: #000;
-    z-index: 99999;
-    /* Garante que fique por cima de tudo */
-    margin: 0;
-    padding: 0;
-}
-
-/* Força o Iframe a ser gigante */
 .video-full-screen-container iframe {
     width: 100%;
     height: 100%;
     border: none;
-    display: block;
 }
 
-/* Bannerzinho no rodapé (Estilo profissional) */
-.video-overlay-footer {
+.overlay-footer {
     position: absolute;
-    bottom: 20px;
-    left: 20px;
-    background: rgba(2, 6, 23, 0.85);
-    padding: 12px 20px;
-    border-radius: 12px;
-    border-left: 5px solid #ec4899;
-    /* Pink neon */
+    bottom: 40px;
+    left: 40px;
+    right: 40px;
+    background: rgba(2, 6, 23, 0.9);
+    padding: 20px 35px;
+    border-radius: 20px;
+    border-left: 10px solid #ec4899;
     color: white;
-    font-family: sans-serif;
-    font-weight: bold;
     display: flex;
     align-items: center;
-    gap: 15px;
-    pointer-events: none;
-    /* Não atrapalha cliques se necessário */
+    gap: 20px;
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.8);
 }
 
-.badge-ao-vivo {
-    background: #ec4899;
-    font-size: 0.7rem;
-    padding: 3px 8px;
-    border-radius: 4px;
-    animation: blinker 1.5s linear infinite;
+/* --- TELA DE TV DESCONECTADA & CARREGAMENTO --- */
+.display-status-wrapper.loading-bg {
+    background: #000;
+    position: fixed;
+    inset: 0;
+    z-index: 100000;
 }
 
-@keyframes blinker {
-    50% {
-        opacity: 0;
-    }
+.display-status-wrapper.error-bg {
+    background: radial-gradient(circle at center, #1e1b4b 0%, #020617 100%);
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.text-neon-pink {
+    color: #ec4899;
+    text-shadow: 0 0 15px rgba(236, 72, 153, 0.6);
+    font-weight: 900;
+    letter-spacing: 2px;
+}
+
+.pulse-glow {
+    animation: pulsarNeon 3s infinite ease-in-out;
+}
+
+.status-card-glass {
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid rgba(236, 72, 153, 0.4);
+    border-radius: 20px;
+    padding: clamp(30px, 5vw, 50px) 20px;
+    width: 100%;
+    max-width: 450px;
+    backdrop-filter: blur(15px);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+    text-align: center;
+    animation: entradaSuave 0.6s ease-out forwards;
+}
+
+.status-card-glass p {
+    color: #cbd5e1;
+    font-size: clamp(1rem, 3vw, 1.2rem);
+    line-height: 1.6;
+    margin: 0;
+}
+
+.btn-status-action {
+    background: linear-gradient(90deg, #a855f7, #6366f1);
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 10px;
+}
+
+.btn-status-action:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(168, 85, 247, 0.4);
+    filter: brightness(1.1);
+}
+
+/* --- TÍTULO NEON DA TELA DE ERRO --- */
+.status-brand-neon.cyan.cyan {
+    font-size: clamp(2.5rem, 12vw, 5rem);
+    font-weight: 900;
+    color: #22d3ee;
+    /* Ciano forte direto no código para não falhar */
+    text-transform: uppercase;
+    letter-spacing: 8px;
+    margin-bottom: 30px;
+    text-shadow:
+        0 0 15px rgba(34, 211, 238, 0.8),
+        0 0 30px rgba(34, 211, 238, 0.4);
+    text-align: center;
+    animation: entradaSuave 0.8s ease-out;
 }

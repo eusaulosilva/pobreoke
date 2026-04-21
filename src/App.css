@@ -103,6 +103,24 @@
 
 
 
+/* --- TEXTOS DOS CARDS DA HOME --- */
+.menu-card .card-content h3 {
+    color: #f8fafc; /* Branco claro para destacar o título */
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.menu-card .card-content p {
+    color: #94a3b8; /* Cinza claro para o texto de explicação */
+    font-size: 0.95rem;
+    margin: 0;
+}
+
+/* Garante que o ícone do card não fique escuro caso seja fonte */
+.menu-card .card-icon {
+    font-size: 2rem;
+}
 
 
 /* --- Título Responsivo --- */

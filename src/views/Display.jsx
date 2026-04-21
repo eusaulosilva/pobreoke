@@ -1,47 +1,46 @@
 import React, { useState, useEffect } from "react";
 import { db } from "../firebase";
 import { ref, onValue } from "firebase/database";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import "./Display.css";
 
 export default function Display() {
     const { roomId } = useParams();
+    const navigate = useNavigate();
+
     const [videoId, setVideoId] = useState(null);
     const [noPalco, setNoPalco] = useState({ nome: "AGUARDANDO...", musica: "ESCOLHA UMA MÚSICA" });
-    
-    const [roomExists, setRoomExists] = useState(true); // NOVO ESTADO
+    const [roomExists, setRoomExists] = useState(null); // Iniciamos como null para saber que ainda está validando
+    const [carregando, setCarregando] = useState(true);
 
     useEffect(() => {
-        if (!roomId) return;
+        if (!roomId) {
+            setRoomExists(false);
+            setCarregando(false);
+            return;
+        }
 
         const roomRef = ref(db, `salas/${roomId.toUpperCase()}`);
+
+        // Verifica a existência da sala uma única vez no início e depois monitora
         const unsub = onValue(roomRef, (snapshot) => {
-            setRoomExists(snapshot.exists());
+            const exists = snapshot.exists();
+            setRoomExists(exists);
+            setCarregando(false); // Para de carregar assim que recebe a primeira resposta do Firebase
         });
 
         return () => unsub();
     }, [roomId]);
 
-    if (!roomExists && roomId) {
-        return (
-            <div className="display-container bg-black text-center">
-                <h1 className="text-danger fw-bold">SALA INVÁLIDA</h1>
-                <p className="text-white">A conexão com o DJ foi perdida ou o código expirou.</p>
-            </div>
-        );
-    }
-
     useEffect(() => {
-        if (!roomId) return;
+        if (!roomId || !roomExists) return;
 
-        // 1. Ouve o vídeo atual da sala específica do DJ
         const configRef = ref(db, `salas/${roomId}/configuracao`);
         const unsubConfig = onValue(configRef, (snapshot) => {
             const data = snapshot.val();
             setVideoId(data?.videoAtual || null);
         });
 
-        // 2. Ouve a fila da sala para o rodapé do vídeo
         const filaRef = ref(db, `salas/${roomId}/fila`);
         const unsubFila = onValue(filaRef, (snapshot) => {
             const data = snapshot.val();
@@ -59,51 +58,67 @@ export default function Display() {
             unsubConfig();
             unsubFila();
         };
-    }, [roomId]);
+    }, [roomId, roomExists]);
 
-    // Caso o link não tenha o código da sala
-    if (!roomId) {
+    // 1. TELA DE CARREGAMENTO (Evita mostrar o fundo antigo ao dar F5)
+    if (carregando) {
+        return <div className="display-status-wrapper loading-bg"></div>;
+    }
+
+    // 2. TELA DE ERRO / SALA APAGADA (Com botão de volta)
+    if (!roomExists) {
         return (
-            <div className="display-container d-flex flex-column align-items-center justify-content-center bg-black">
-                <h1 className="text-danger fw-bold">TV DESCONECTADA</h1>
-                <p className="text-white">O DJ precisa de clicar em "ABRIR TV" no painel.</p>
-            </div>
+            <div className="display-status-wrapper error-bg">
+                <h1 className="status-brand-neon-cyan pulse-glow">POBREOKÊ</h1>
+                <div className="status-card-glass">
+                    <h4 className="text-neon-pink mb-3">📺 Sinal Perdido</h4>
+                    <p className="mb-4">
+                        A cantoria acabou ou a sala foi fechada pelo DJ.<br/>
+                        Aguardando nova conexão...
+                    </p>
+                    <button className="btn-status-action" onClick={() => navigate("/")}>
+                        VOLTAR AO INÍCIO
+                    </button>
+                </div>
+            </div >
         );
     }
 
-    // Se houver um vídeo a passar na TV
+    // 3. VÍDEO TOCANDO
     if (videoId) {
         return (
             <div className="video-full-screen-container">
                 <iframe
                     src={`https://www.youtube.com/embed/${videoId}?autoplay=1&controls=1&showinfo=0&rel=0&vq=hd1080&origin=${window.location.origin}`}
                     title="Pobreoke Player"
-                    frameBorder="0"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
                 ></iframe>
 
-                <div className="video-overlay-footer">
-                    <div className="d-flex align-items-center gap-3">
-                        <span className="badge-ao-vivo">NO PALCO 🎤</span>
-                        <span className="info-text">{noPalco.nome} - {noPalco.musica}</span>
-                    </div>
+                <div className="overlay-footer">
+                    <span className="badge-ao-vivo fw-bold me-3">NO PALCO 🎤</span>
+                    <span className="info-text fs-4 fw-bold">
+                        {noPalco.nome} — <span style={{ color: 'var(--neon-pink)' }}>{noPalco.musica}</span>
+                    </span>
                 </div>
             </div>
         );
     }
 
-    // Ecrã de espera (Sem vídeo) - Usando apenas as tuas classes do CSS
+    // 4. STANDBY
     return (
-        <div className="display-container container-fluid d-flex flex-column align-items-center justify-content-center">
-            <h1 className="display-brand mb-5">
-                POBREOKÊ
-            </h1>
-
-            <div className="display-now text-center p-5 shadow-lg">
-                <span className="text-uppercase fw-bold letter-spacing-3 text-pink">A SEGUIR</span>
-                <h1 className="display-singer">{noPalco.nome}</h1>
-                <p className="display-song">{noPalco.musica}</p>
+        <div className="display-container container-fluid">
+            <h1 className="display-brand">POBREOKÊ</h1>
+            <div className="display-now shadow-lg">
+                <span className="display-label">A SEGUIR</span>
+                <h1 className="display-singer text-truncate px-2">{noPalco.nome}</h1>
+                <p className="display-song text-truncate px-3">{noPalco.musica}</p>
+            </div>
+            <div className="opacity-50 text-center">
+                <p className="letter-spacing-2 fw-bold">AGUARDANDO COMANDO DO DJ</p>
+            </div>
+            <div className="container-sala mt-4">
+                <p className="m-0">SALA: {roomId.toUpperCase()}</p>
             </div>
         </div>
     );

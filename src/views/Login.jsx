@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { auth } from "../firebase";
 import { signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
@@ -6,12 +6,15 @@ import "./Login.css";
 
 export default function Login() {
     const navigate = useNavigate();
+    const [carregando, setCarregando] = useState(true);
 
-    // 1. Redirecionamento Automático: Se já estiver logado, vai direto para o Admin
+    // 1. Redirecionamento Automático: Espera o Firebase responder
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             if (user) {
-                navigate("/admin"); //
+                navigate("/admin"); 
+            } else {
+                setCarregando(false); // Só mostra a tela de login se NÃO tiver usuário
             }
         });
         return () => unsubscribe();
@@ -30,7 +33,6 @@ export default function Login() {
 
     // 3. Clique no Fundo: Clicar fora do card de login volta para a Home (/)
     const handleBackgroundClick = (e) => {
-        // Verifica se o clique foi na div principal e não nos seus filhos (card)
         if (e.target.classList.contains("login-page")) {
             navigate("/");
         }
@@ -40,15 +42,19 @@ export default function Login() {
         const provider = new GoogleAuthProvider();
         try {
             await signInWithPopup(auth, provider);
-            navigate("/admin"); //
+            // O próprio onAuthStateChanged vai detectar e jogar pro /admin
         } catch (error) {
             console.error("Erro ao logar:", error);
         }
     };
 
+    // 4. Tela preta de carregamento para evitar o "flash" do card
+    if (carregando) {
+        return <div className="login-page loading-bg"></div>;
+    }
+
     return (
         <div className="login-page" onClick={handleBackgroundClick}>
-            {/* e.stopPropagation evita que o clique dentro do card acione o voltar para a Home */}
             <div className="login-card shadow-lg" onClick={(e) => e.stopPropagation()}>
                 <div className="login-header">
                     <h1 className="neon-text-cyan">POBREOKÊ</h1>

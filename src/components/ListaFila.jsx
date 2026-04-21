@@ -3,7 +3,7 @@ import React from "react";
 export default function ListaFila({ fila, chamarParaPalco, removerDaFila }) {
     return (
         <div className="lista-container">
-            <h2 style={{ color: "var(--text-muted)", fontSize: "0.8rem", textTransform: "uppercase", marginBottom: "15px", textAlign: "left" }}>
+            <h2 style={{ color: "var(--text-white)", fontSize: "0.8rem", textTransform: "uppercase", marginBottom: "15px", textAlign: "left" }}>
                 Próximos na Fila
             </h2>
             {fila

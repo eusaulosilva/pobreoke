@@ -1,66 +1,27 @@
-/* Definições de Cores e Variáveis */
-:root {
-    --bg-dark: #020617;
-    --bg-card: #0f172a;
-    --neon-pink: #ec4899;
-    --neon-cyan: #22d3ee;
-    --neon-purple: #a855f7;
-    --text-main: #f8fafc;
-    --text-muted: #ffffff;
-}
 
-body,
-html,
-#root {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-    overflow-x: hidden;
-}
-
-/* Reset Geral para Responsividade */
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
-
-body {
-    background-color: var(--bg-dark);
-    color: var(--text-main);
-    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    padding: 20px 10px;
-    /* Padding menor nas laterais para mobile */
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-height: 100vh;
-    width: 100%;
-}
-
-/* Container que se adapta a qualquer tela */
-.container {
+/* --- GERAL RESPONSIVO DO PEDIDO --- */
+.app-main-container {
     width: 100%;
     max-width: 400px;
     display: flex;
     flex-direction: column;
+    margin: 0 auto;
 }
 
-/* --- HEADER (NOW PLAYING) RESPONSIVO --- */
+/* --- HEADER (NOW PLAYING) --- */
 .now-playing {
     background: linear-gradient(135deg, #4c1d95, #831843);
     padding: 20px;
     border-radius: 20px;
     margin-bottom: 30px;
-    border: 1px solid var(--neon-pink);
+    border: 1px solid #ec4899;
     box-shadow: 0 0 20px rgba(236, 72, 153, 0.3);
     text-align: center;
     width: 100%;
 }
 
 .now-playing span {
-    color: var(--neon-cyan);
+    color: #22d3ee;
     font-size: 0.8rem;
     font-weight: bold;
     text-transform: uppercase;
@@ -70,9 +31,9 @@ body {
 .now-playing h1 {
     margin: 10px 0 5px 0;
     font-size: clamp(1.5rem, 5vw, 2rem);
-    /* Fonte diminui no celular */
     white-space: normal;
     word-break: break-word;
+    color: white;
 }
 
 .now-playing p {
@@ -83,9 +44,9 @@ body {
     word-break: break-word;
 }
 
-/* --- FORMULÁRIO --- */
+/* --- FORMULÁRIO (Isolado no .card) --- */
 .card {
-    background-color: var(--bg-card);
+    background-color: #0f172a;
     padding: 25px;
     border-radius: 20px;
     border: 1px solid #1e293b;
@@ -94,10 +55,10 @@ body {
     text-align: center;
 }
 
-h2 {
+.card h2 {
     font-size: 1.2rem;
     margin-bottom: 15px;
-    color: var(--neon-cyan);
+    color: #22d3ee;
 }
 
 .input-group {
@@ -105,16 +66,16 @@ h2 {
     text-align: left;
 }
 
-label {
+.input-group label {
     display: block;
     font-size: 0.75rem;
     font-weight: bold;
     margin-bottom: 8px;
-    color: var(--text-muted);
+    color: #ffffff;
     text-transform: uppercase;
 }
 
-input {
+.input-group input {
     width: 100%;
     padding: 12px;
     background: #020617;
@@ -124,16 +85,16 @@ input {
     font-size: 1rem;
 }
 
-input:focus {
+.input-group input:focus {
     outline: none;
-    border-color: var(--neon-pink);
+    border-color: #ec4899;
     box-shadow: 0 0 10px rgba(236, 72, 153, 0.2);
 }
 
 button.btn-add {
     width: 100%;
     padding: 15px;
-    background: linear-gradient(90deg, var(--neon-pink), var(--neon-purple));
+    background: linear-gradient(90deg, #ec4899, #a855f7);
     border: none;
     border-radius: 10px;
     color: white;
@@ -159,13 +120,11 @@ button.btn-add:active {
     border-left: 4px solid;
     gap: 15px;
     width: 100%;
-
 }
 
 .queue-info {
     flex: 1;
     min-width: 0;
-    /* Garante que o flex não quebre com texto longo */
     text-align: left;
 }
 
@@ -181,25 +140,23 @@ button.btn-add:active {
 .queue-info p {
     margin: 0;
     font-size: 0.85rem;
-    color: var(--text-muted);
+    color: #ffffff;
     white-space: normal;
     word-break: break-word;
     line-height: 1.4;
 }
 
-/* --- BOTÕES NEON --- */
+/* --- BOTÕES NEON DA FILA --- */
 .admin-controls {
     display: flex;
     gap: 10px;
     flex-shrink: 0;
-    /* Impede os botões de esmagarem */
 }
 
-/* Botão PLAY (Ciano) */
 .admin-controls button:first-child {
     background: rgba(34, 211, 238, 0.1);
-    color: var(--neon-cyan);
-    border: 1px solid var(--neon-cyan);
+    color: #22d3ee;
+    border: 1px solid #22d3ee;
     padding: 8px 12px;
     border-radius: 8px;
     font-weight: bold;
@@ -210,16 +167,15 @@ button.btn-add:active {
 }
 
 .admin-controls button:first-child:hover {
-    background: var(--neon-cyan);
+    background: #22d3ee;
     color: #020617;
     box-shadow: 0 0 15px rgba(34, 211, 238, 0.4);
 }
 
-/* Botão X (Rosa) */
 .admin-controls button:last-child {
     background: rgba(236, 72, 153, 0.1);
-    color: var(--neon-pink);
-    border: 1px solid var(--neon-pink);
+    color: #ec4899;
+    border: 1px solid #ec4899;
     padding: 8px 10px;
     border-radius: 8px;
     font-weight: bold;
@@ -229,12 +185,11 @@ button.btn-add:active {
 }
 
 .admin-controls button:last-child:hover {
-    background: var(--neon-pink);
+    background: #ec4899;
     color: white;
     box-shadow: 0 0 15px rgba(236, 72, 153, 0.4);
 }
 
-/* Media Query para telas muito pequenas */
 @media (max-width: 400px) {
     .admin-controls {
         gap: 5px;
@@ -246,37 +201,99 @@ button.btn-add:active {
     }
 }
 
-.pedido-page {
+/* --- TELAS DE STATUS (LOGIN/SALA) --- */
+.status-screen-container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: #020617;
     padding: 20px;
-    max-width: 600px;
-    margin: 0 auto;
+    text-align: center;
+    width: 100%;
+}
+
+.status-title-neon {
+    font-size: clamp(2.5rem, 10vw, 5rem);
+    font-weight: 900;
+    color: #22d3ee;
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    margin-bottom: 20px;
+    text-shadow: 0 0 10px rgba(34, 211, 238, 0.8), 0 0 20px rgba(34, 211, 238, 0.4);
+}
+
+.status-title-neon.error {
+    color: #ec4899;
+    text-shadow: 0 0 10px rgba(236, 72, 153, 0.8), 0 0 20px rgba(236, 72, 153, 0.4);
+}
+
+.status-card {
+    background: #0f172a;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 24px;
+    padding: 40px 30px;
+    max-width: 450px;
+    width: 100%;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+}
+
+.status-card p {
+    color: #94a3b8;
+    font-size: 1.1rem;
+    margin-bottom: 30px;
+}
+
+.btn-status-action {
+    width: 100%;
+    padding: 16px;
+    border-radius: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: linear-gradient(90deg, #a855f7, #6366f1);
     color: white;
 }
 
-.mini-lista-container {
-    margin-top: 40px;
+.btn-status-action:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(168, 85, 247, 0.4);
 }
 
-.mini-item {
-    background: rgba(255, 255, 255, 0.05);
-    margin: 10px 0;
-    padding: 12px;
-    border-radius: 8px;
+.room-code-input {
+    width: 100%;
+    background: #020617;
+    border: 2px solid #1e293b;
+    border-radius: 12px;
+    padding: 15px;
+    color: #22d3ee;
+    font-size: 2rem;
+    font-weight: 900;
+    text-align: center;
+    letter-spacing: 10px;
+    margin-bottom: 20px;
+    transition: 0.3s;
+}
+
+.room-code-input:focus {
+    border-color: #22d3ee;
+    outline: none;
+    box-shadow: 0 0 15px rgba(34, 211, 238, 0.2);
+}
+
+/* Adicione esta classe para o fundo preto da tela principal */
+.pedido-bg-black,
+.status-screen-container {
+    background: radial-gradient(circle at center, #1e1b4b 0%, #020617 100%) !important;
+    min-height: 100dvh;
+    width: 100%;
     display: flex;
-    gap: 10px;
-    border-left: 3px solid #ff00ff;
-}
-
-.mini-item .index {
-    color: #00f2ff;
-    font-weight: bold;
-}
-
-.mini-item .nome {
-    font-weight: 500;
-}
-
-.mini-item .musica {
-    opacity: 0.7;
-    font-style: italic;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }

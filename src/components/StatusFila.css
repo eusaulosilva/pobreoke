@@ -58,3 +58,63 @@
         transform: scale(0.95);
     }
 }
+/* */
+
+.admin-neon-card {
+    background-color: #1e293b;
+    border-radius: 8px; /* Cantos mais discretos */
+    padding: 6px 12px;  /* Redução drástica: 6px em cima/baixo para ficar fino */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    
+    /* Espaçamento entre cards reduzido para o mínimo */
+    margin-bottom: 5px; 
+    
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-left: 4px solid var(--neon-cyan); /* Borda lateral mais fina */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Ajuste de Texto para ocupar menos altura */
+.singer-title {
+    color: #ffffff;
+    font-size: 0.95rem; /* Texto menor */
+    font-weight: 700;
+    margin: 0;
+    line-height: 1.1;
+}
+
+.song-subtitle {
+    color: #94a3b8;
+    font-size: 0.6rem; /* Subtítulo minúsculo */
+    letter-spacing: 0.5px;
+    margin-top: 1px;
+    line-height: 1;
+}
+
+/* Botões Ultra-Compactos */
+.btn-play-neon {
+    padding: 4px 12px; /* Botão bem mais baixo */
+    font-size: 0.65rem;
+    border-radius: 6px;
+    border-width: 1px; /* Borda mais fina para acompanhar o estilo */
+}
+
+.btn-x-neon {
+    width: 28px;  /* Reduzido para 28px */
+    height: 28px; /* Reduzido para 28px */
+    border-radius: 6px;
+    border-width: 1px;
+}
+
+.btn-x-neon svg {
+    width: 14px; /* Ícone do 'X' menor */
+    height: 14px;
+}
+
+/* Remove qualquer espaçamento extra do container pai */
+.panel-body-scroll {
+    gap: 4px !important; /* Força um espaço mínimo entre os itens no Admin.css */
+}

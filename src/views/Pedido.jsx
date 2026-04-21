@@ -25,6 +25,7 @@ export default function Pedido() {
     useEffect(() => {
         if (!roomId) return;
 
+        // Garante que o ID da sala buscado no Firebase seja sempre maiúsculo
         const salaIdFormatado = roomId.toUpperCase();
         const roomRef = ref(db, `salas/${salaIdFormatado}`);
 
@@ -71,12 +72,17 @@ export default function Pedido() {
     // Tela exibida caso a sala seja excluída ou o código seja inválido
     if (!roomExists && roomId) {
         return (
-            <div className="container-fluid min-vh-100 d-flex flex-column justify-content-center align-items-center bg-black text-center p-4">
-                <h1 style={{ color: 'var(--neon-pink)', fontWeight: '900' }}>SALA ENCERRADA</h1>
-                <p className="text-white mt-3">Esta sala não existe ou foi finalizada pelo DJ.</p>
-                <button className="btn-photo-purple-search mt-4 px-5" onClick={() => navigate("/pedir")}>
-                    SAIR DA SALA
-                </button>
+            <div className="status-screen-container">
+                <h1 className="status-title-neon error">SALA ENCERRADA</h1>
+                <div className="status-card">
+                    <p>Esta sala não existe ou foi finalizada pelo DJ. Que tal começar uma nova?</p>
+                    <button
+                        className="btn-status-action"
+                        onClick={() => navigate("/pedir")}
+                    >
+                        VOLTAR AO INÍCIO
+                    </button>
+                </div>
             </div>
         );
     }
@@ -84,6 +90,7 @@ export default function Pedido() {
     const handleAcederSala = (e) => {
         e.preventDefault();
         if (inputCodigo.trim()) {
+            // Navega para a sala garantindo o código em maiúsculas na URL
             navigate(`/pedir/${inputCodigo.trim().toUpperCase()}`);
         }
     };
@@ -91,62 +98,70 @@ export default function Pedido() {
     // Tela inicial para inserir o código da sala
     if (!roomId) {
         return (
-            <div className="container-fluid container min-vh-100 d-flex justify-content-center align-items-center" style={{ backgroundColor: '#020617' }}>
-                <div className="admin-glass-panel p-5 welcome-card text-center shadow-lg" style={{ maxWidth: '400px', border: '1px solid #1e293b' }}>
-                    <h2 style={{ color: 'var(--neon-pink)', fontWeight: '900' }} className="mb-4">POBREOKÊ</h2>
-                    <p className="text-white small mb-4">Insere o código da sala:</p>
+            <div className="status-screen-container">
+                <h1 className="status-title-neon">POBREOKÊ</h1>
+                <div className="status-card">
+                    <p>Digite o código da sala para entrar na cantoria:</p>
                     <form onSubmit={handleAcederSala}>
                         <input
                             type="text"
-                            className="photo-style-input text-center mb-3 fs-4 fw-bold"
-                            placeholder="CÓDIGO"
+                            className="room-code-input"
+                            placeholder="000000"
                             value={inputCodigo}
-                            onChange={(e) => setInputCodigo(e.target.value)}
-                            style={{ letterSpacing: '5px', textTransform: 'uppercase' }}
+                            onChange={(e) => setInputCodigo(e.target.value.toUpperCase())}
                             maxLength={6}
+                            autoFocus
                         />
-                        <button className="btn-photo-purple-search w-100 py-3 fw-bold">ENTRAR 🎤</button>
+                        <button className="btn-status-action">ENTRAR NA SALA 🎤</button>
                     </form>
                 </div>
             </div>
         );
     }
 
+    // Verifica se o usuário já tem um pedido ativo (aguardando ou cantando)
     const bloqueado = fila.some(item => item.uid === uid && (item.status === "aguardando" || item.status === "iniciado"));
     const posicaoNaFila = fila.filter(item => item.status === "aguardando").findIndex(item => item.uid === uid) + 1;
 
     const adicionarAFila = (e) => {
         e.preventDefault();
         if (bloqueado) return alert("Já estás na fila!");
+        
+        // Envia para o Firebase sempre em letras maiúsculas
         push(ref(db, `salas/${roomId.toUpperCase()}/fila`), {
-            uid, nome, musica, status: "aguardando", timestamp: Date.now()
+            uid, 
+            nome, 
+            musica, 
+            status: "aguardando", 
+            timestamp: Date.now()
         });
         setMusica("");
     };
 
     return (
-        <div className="container-fluid container py-4 d-flex justify-content-center">
-            <div className="app-main-container">
-                {noPalco ? (
-                    <Header noPalco={noPalco} />
-                ) : (
-                    <div className="text-center text-white py-3">A carregar palco...</div>
-                )}
-                <Formulario
-                    nome={nome}
-                    setNome={setNome}
-                    musica={musica}
-                    setMusica={setMusica}
-                    adicionarAFila={adicionarAFila}
-                    bloqueado={bloqueado}
-                />
+        <div className="pedido-bg-black">
+            <div className="container-fluid container py-4 d-flex justify-content-center">
+                <div className="app-main-container">
+                    {noPalco ? (
+                        <Header noPalco={noPalco} />
+                    ) : (
+                        <div className="text-center text-white py-3">A carregar palco...</div>
+                    )}
+                    
+                    <Formulario
+                        nome={nome}
+                        setNome={setNome}
+                        musica={musica}
+                        setMusica={setMusica}
+                        adicionarAFila={adicionarAFila}
+                        bloqueado={bloqueado}
+                    />
 
-                {posicaoNaFila > 0 && <StatusFila posicao={posicaoNaFila} />}
+                    {posicaoNaFila > 0 && <StatusFila posicao={posicaoNaFila} />}
 
-
-
-                <div className="mt-4">
-                    <ListaFila fila={fila} />
+                    <div className="mt-4">
+                        <ListaFila fila={fila} />
+                    </div>
                 </div>
             </div>
         </div>

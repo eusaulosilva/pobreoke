@@ -8,7 +8,7 @@ export default function Home() {
     return (
         <div className="home-container">
             <header className="home-header">
-                <h1 className="neon-text-pink">POBREOKÊ</h1>
+                <h1 className="display-brand">POBREOKÊ</h1>
 
             </header>
 

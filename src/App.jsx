@@ -5,6 +5,7 @@ import Display from "./views/Display";
 import Admin from "./views/Admin";
 import Login from "./views/Login";
 import Pedido from "./views/Pedido";
+import './index.css';
 
 function App() {
   return (
