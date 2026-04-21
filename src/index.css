@@ -105,12 +105,12 @@ body,
 #root {
   background: var(--bg-global) !important;
   background-color: var(--bg-dark) !important;
-  /* Fallback de segurança */
   color: var(--text-main) !important;
-
   margin: 0;
   padding: 0;
-  font-family: 'Inter', 'Segoe UI', sans-serif;
+  
+  /* Esta linha força o celular a tentar imitar a fonte do sistema do PC */
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
 }
 
 * {
