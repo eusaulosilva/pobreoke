@@ -46,6 +46,64 @@
     0 0 20px rgba(168, 85, 247, 0.4) !important;
 }
 
+/* --- LOGO GIGANTE (PADRÃO CIANO) --- */
+.status-brand-neon-cyan {
+  font-size: clamp(2.5rem, 12vw, 5rem) !important;
+  font-weight: 900 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 8px !important;
+  margin-bottom: 30px;
+  text-align: center;
+  /* Ciano é a cor padrão */
+  color: var(--neon-cyan) !important;
+  text-shadow:
+    0 0 15px rgba(34, 211, 238, 0.8),
+    0 0 30px rgba(34, 211, 238, 0.4) !important;
+}
+
+/* --- VARIAÇÕES DE COR --- */
+/* Como usar: <h1 className="status-brand-neon pink">TEXTO</h1> */
+
+.status-brand-neon-pink {
+  color: var(--neon-pink) !important;
+  text-shadow:
+    0 0 15px rgba(236, 72, 153, 0.8),
+    0 0 30px rgba(236, 72, 153, 0.4) !important;
+}
+
+.status-brand-neon-purple {
+  color: var(--neon-purple) !important;
+  text-shadow:
+    0 0 15px rgba(168, 85, 247, 0.8),
+    0 0 30px rgba(168, 85, 247, 0.4) !important;
+}
+
+.status-brand-neon-red,
+.status-brand-neon-error {
+  /* Aceita tanto 'red' quanto 'error' que você já usava */
+  color: var(--neon-red) !important;
+  text-shadow:
+    0 0 15px rgba(239, 68, 68, 0.8),
+    0 0 30px rgba(239, 68, 68, 0.4) !important;
+}
+
+/* Efeito opcional de pulso */
+.pulse-glow {
+  animation: pulsarNeonCyan 3s infinite ease-in-out;
+}
+
+@keyframes pulsarNeonCyan {
+
+  0%,
+  100% {
+    text-shadow: 0 0 15px rgba(34, 211, 238, 0.6), 0 0 30px rgba(34, 211, 238, 0.3) !important;
+  }
+
+  50% {
+    text-shadow: 0 0 25px rgba(34, 211, 238, 1), 0 0 45px rgba(34, 211, 238, 0.6) !important;
+  }
+}
+
 /* BLINDAGEM DO FUNDO CONTRA BOOTSTRAP E PADRÕES DO NAVEGADOR */
 html,
 body,
@@ -83,4 +141,3 @@ body,
   margin: 0 !important;
   width: 100% !important;
 }
-

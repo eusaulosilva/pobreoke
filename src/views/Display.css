@@ -215,7 +215,7 @@
 }
 
 /* --- TÍTULO NEON DA TELA DE ERRO --- */
-.status-brand-neon.cyan.cyan {
+.status-brand-neon-cyan.cyan {
     font-size: clamp(2.5rem, 12vw, 5rem);
     font-weight: 900;
     color: #22d3ee;

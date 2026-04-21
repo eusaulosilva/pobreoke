@@ -73,7 +73,7 @@ export default function Display() {
                 <div className="status-card-glass">
                     <h4 className="text-neon-pink mb-3">📺 Sinal Perdido</h4>
                     <p className="mb-4">
-                        A cantoria acabou ou a sala foi fechada pelo DJ.<br/>
+                        A cantoria acabou ou a sala foi fechada pelo DJ.<br />
                         Aguardando nova conexão...
                     </p>
                     <button className="btn-status-action" onClick={() => navigate("/")}>
