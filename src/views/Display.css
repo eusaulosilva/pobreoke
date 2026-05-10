@@ -222,6 +222,9 @@
 /* --- TÍTULO NEON DA TELA DE ERRO --- */
 
 @media (max-width: 768px) {
+    .display-now{
+        width: 90%;
+    }
     .overlay-footer {
         padding: 12px 15px; /* Diminui o espaço interno */
         gap: 10px;          /* Diminui o espaço entre os elementos (foto, nome, etc) */

@@ -152,6 +152,7 @@ body,
     entradaSuave 0.8s ease-out,
     pulsarNeonRosa 1.5s ease-in-out infinite alternate 0.8s;
   -webkit-text-stroke: 1.5px var(--neon-purple);
+  paint-order: stroke fill;
 
   text-shadow:
     0 0 10px rgba(168, 85, 247, 0.8),
@@ -196,6 +197,7 @@ body,
   animation: entradaSuave 0.8s ease-out, pulsarNeonPink 1.5s ease-in-out infinite alternate 0.8s;
 
   -webkit-text-stroke: 1.5px var(--neon-pink);
+  paint-order: stroke fill;
 
   text-shadow:
     0 0 10px rgba(236, 72, 153, 0.8),
@@ -236,6 +238,7 @@ body,
   animation: entradaSuave 0.8s ease-out, pulsarNeonPurple 1.5s ease-in-out infinite alternate 0.8s;
 
   -webkit-text-stroke: 1.5px var(--neon-purple);
+  paint-order: stroke fill;
 
   text-shadow:
     0 0 10px rgba(168, 85, 247, 0.8),
@@ -276,6 +279,7 @@ body,
   animation: entradaSuave 0.8s ease-out, pulsarNeonRed 1.5s ease-in-out infinite alternate 0.8s;
 
   -webkit-text-stroke: 1.5px var(--neon-cyan);
+  paint-order: stroke fill;
 
   text-shadow:
     0 0 10px rgba(239, 68, 68, 0.8),

@@ -5,6 +5,7 @@ import Display from "./views/Display";
 import Admin from "./views/Admin";
 import Login from "./views/Login";
 import Pedido from "./views/Pedido";
+import DisplayQR from './views/DisplayQR';
 import './index.css';
 
 function App() {
@@ -13,12 +14,13 @@ function App() {
       <Route path="/" element={<Home />} />
 
       {/* Rotas para os Convidados: aceita aceder com ou sem código */}
-      <Route path="/pedir" element={<Pedido />} />
-      <Route path="/pedir/:roomId" element={<Pedido />} />
+      <Route path="/sala" element={<Pedido />} />
+      <Route path="/sala/:roomId" element={<Pedido />} />
 
       {/* Rotas para a TV: aceita aceder com ou sem código */}
       <Route path="/display" element={<Display />} />
       <Route path="/display/:roomId" element={<Display />} />
+      <Route path="/display/qr/:roomId" element={<DisplayQR />} />
 
       <Route path="/admin" element={<Admin />} />
       <Route path="/login" element={<Login />} />

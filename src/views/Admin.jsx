@@ -186,6 +186,7 @@ export default function Admin() {
 
     const linkPedidos = `${window.location.origin}/pedir/${roomCode}`;
     const linkDisplay = `${window.location.origin}/display/${roomCode}`;
+    const linkQR = `${window.location.origin}/display/qr/${roomCode}`;
 
     return (
         <div className="admin-page-container">
@@ -203,6 +204,9 @@ export default function Admin() {
                         </button>
                         <button className="btn-action-pink" onClick={() => window.open(linkDisplay, '_blank')}>
                             <Monitor size={14} /> TV
+                        </button>
+                        <button className="btn-action-cyan" onClick={() => window.open(linkQR, '_blank')}>
+                            <QrCode size={14} /> QR TV
                         </button>
                         <button className="btn-action-cyan" onClick={() => setModalAberto(true)}>
                             <QrCode size={16} /> QR
@@ -235,7 +239,7 @@ export default function Admin() {
                                         COPIAR LINK
                                     </button>
                                 </div>
-
+                            
                                 <button className="btn-photo-purple-search w-100 py-3 mt-2" onClick={downloadQRCode}>
                                     BAIXAR QR HD
                                 </button>

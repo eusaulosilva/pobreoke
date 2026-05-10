@@ -108,7 +108,7 @@ export default function Display() {
     // 4. STANDBY
     return (
         <div className="display-container container-fluid">
-            <h1 className="display-brand">POBREOKÊ</h1>
+            <h1 className="status-neon-cyan">POBREOKÊ</h1>
             <div className="display-now shadow-lg">
                 <span className="display-label">A SEGUIR</span>
                 <h1 className="display-singer text-truncate px-2">{noPalco.nome}</h1>

@@ -78,7 +78,7 @@ export default function Pedido() {
                     <p>Esta sala não existe ou foi finalizada pelo DJ. Que tal começar uma nova?</p>
                     <button
                         className="btn-status-action"
-                        onClick={() => navigate("/pedir")}
+                        onClick={() => navigate("/sala")}
                     >
                         VOLTAR AO INÍCIO
                     </button>
@@ -91,7 +91,7 @@ export default function Pedido() {
         e.preventDefault();
         if (inputCodigo.trim()) {
             // Navega para a sala garantindo o código em maiúsculas na URL
-            navigate(`/pedir/${inputCodigo.trim().toUpperCase()}`);
+            navigate(`/sala/${inputCodigo.trim().toUpperCase()}`);
         }
     };
 
