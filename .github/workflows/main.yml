@@ -31,5 +31,5 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./dist/  # ⚠️ MUITO IMPORTANTE: Envia apenas a pasta gerada pelo Vite
-          server-dir: public_html/pobreoker/
+          server-dir: ./
           protocol: ftp # Ou sftp
