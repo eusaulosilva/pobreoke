@@ -1,0 +1,35 @@
+name: Deploy React Vite via FTP
+
+on:
+  push:
+    branches:
+      - main  # Mude se a sua branch principal tiver outro nome (ex: master)
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 🚚 Obter o código fonte
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # Use a versão do Node que você está utilizando no projeto
+
+      - name: 📦 Instalar dependências
+        run: npm install # ou yarn install / pnpm install
+
+      - name: 🛠️ Compilar o projeto (Build)
+        run: npm run build # ou yarn build / pnpm build
+
+      - name: 📂 Sincronizar com a Hostinger
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./dist/  # ⚠️ MUITO IMPORTANTE: Envia apenas a pasta gerada pelo Vite
+          server-dir: public_html/pobreoker/
+          protocol: ftp # Ou sftp
