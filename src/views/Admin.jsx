@@ -52,7 +52,7 @@ export default function Admin() {
     useEffect(() => {
         if (!roomCode) return;
         if (roomCode) {
-            setQrValue(`${window.location.origin}/pedir/${roomCode}`);
+            setQrValue(`${window.location.origin}/sala/${roomCode}`);
         }
         const salaRef = ref(db, `salas/${roomCode}/fila`);
         return onValue(salaRef, (snapshot) => {
@@ -184,7 +184,7 @@ export default function Admin() {
     };
 
 
-    const linkPedidos = `${window.location.origin}/pedir/${roomCode}`;
+    const linkPedidos = `${window.location.origin}/sala/${roomCode}`;
     const linkDisplay = `${window.location.origin}/display/${roomCode}`;
     const linkQR = `${window.location.origin}/display/qr/${roomCode}`;
 
