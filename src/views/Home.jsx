@@ -34,7 +34,7 @@ export default function Home() {
                 </div>
 
                 {/* CARD CONVIDADO */}
-                <div className="menu-card" onClick={() => navigate("/pedir")}>
+                <div className="menu-card" onClick={() => navigate("/sala")}>
                     <div className="card-icon">📱</div>
                     <div className="card-content">
                         <h3>Convidado</h3>

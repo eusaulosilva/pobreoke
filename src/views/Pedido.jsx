@@ -22,6 +22,19 @@ export default function Pedido() {
     const [inputCodigo, setInputCodigo] = useState("");
     const [roomExists, setRoomExists] = useState(true);
 
+    // Estado para o Modal Centralizado (usado apenas para Evidências agora)
+    const [modalConfig, setModalConfig] = useState({ visivel: false, titulo: "", texto: "" });
+
+    // Função para abrir o modal
+    const exibirModal = (titulo, texto) => {
+        setModalConfig({ visivel: true, titulo, texto });
+    };
+
+    // Função para fechar o modal
+    const fecharModal = () => {
+        setModalConfig({ visivel: false, titulo: "", texto: "" });
+    };
+
     useEffect(() => {
         if (!roomId) return;
 
@@ -41,6 +54,13 @@ export default function Pedido() {
             localStorage.setItem("pobreoke_uid", savedUid);
         }
         setUid(savedUid);
+
+        // Verifica se o usuário já viu a dica de Evidências nesta sessão
+        const avisoVisto = sessionStorage.getItem("aviso_evidencias_visto");
+        if (!avisoVisto) {
+            exibirModal("🎶 Dica Especial", "Não peça Evidências, pois ela será a música de encerramento do nosso karaokê!");
+            sessionStorage.setItem("aviso_evidencias_visto", "true");
+        }
 
         // Monitorização da fila
         const filaRef = ref(db, `salas/${salaIdFormatado}/fila`);
@@ -90,13 +110,11 @@ export default function Pedido() {
     const handleAcederSala = (e) => {
         e.preventDefault();
         if (inputCodigo.trim()) {
-            // Navega para a sala garantindo o código em maiúsculas na URL
             navigate(`/sala/${inputCodigo.trim().toUpperCase()}`);
         }
     };
 
     // Tela inicial para inserir o código da sala
-    // Procura por esta condição no Pedido.jsx
     if (!roomId) {
         return (
             <div className="status-screen-container">
@@ -116,7 +134,6 @@ export default function Pedido() {
                         <button className="btn-status-action">ENTRAR NA SALA 🎤</button>
                     </form>
 
-                    {/* Estrutura solicitada inserida aqui */}
                     <div className="back-container">
                         <button className="btn-back-home" onClick={() => navigate("/")}>
                             <span className="arrow">←</span> VOLTAR AO INÍCIO
@@ -127,15 +144,29 @@ export default function Pedido() {
         );
     }
 
-    // Verifica se o usuário já tem um pedido ativo (aguardando ou cantando)
+    // Verifica se o usuário já tem um pedido ativo
     const bloqueado = fila.some(item => item.uid === uid && (item.status === "aguardando" || item.status === "iniciado"));
     const posicaoNaFila = fila.filter(item => item.status === "aguardando").findIndex(item => item.uid === uid) + 1;
 
     const adicionarAFila = (e) => {
         e.preventDefault();
-        if (bloqueado) return alert("Já estás na fila!");
 
-        // Envia para o Firebase sempre em letras maiúsculas
+        if (bloqueado) {
+            alert("Já estás na fila de espera! Canta a tua música antes de pedir outra.");
+            return;
+        }
+
+        // VALIDAÇÃO DA MÚSICA EVIDÊNCIAS
+        const termoBusca = musica.toLowerCase();
+        const musicaLimpa = termoBusca.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+        if (musicaLimpa.includes("evidencia") || termoBusca.includes("chitao")) {
+            exibirModal("Música Bloqueada 🚫", "Não podes pedir Evidências, pois ela será a música de encerramento do karaokê!");
+            setMusica("");
+            return;
+        }
+
+        // Envia para o Firebase
         push(ref(db, `salas/${roomId.toUpperCase()}/fila`), {
             uid,
             nome,
@@ -143,11 +174,36 @@ export default function Pedido() {
             status: "aguardando",
             timestamp: Date.now()
         });
+
+        // Limpa o input apenas, sem popup de sucesso
         setMusica("");
     };
 
     return (
-        <div className="pedido-bg-black">
+        <div className="pedido-bg-black position-relative">
+
+            {/* MODAL CENTRALIZADO USANDO CLASSES CSS LIMPAS (Só aparece para o aviso de Evidências) */}
+            {modalConfig.visivel && (
+                <div
+                    className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center modal-overlay-custom"
+                    onClick={fecharModal}
+                >
+                    <div
+                        className="p-4 text-center d-flex flex-column align-items-center modal-content-custom"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <h4 className="fw-bold mb-3 modal-title-custom">{modalConfig.titulo}</h4>
+                        <p className="text-white mb-4 modal-text-custom">{modalConfig.texto}</p>
+                        <button
+                            className="w-100 py-3 fw-bold border-0 modal-btn-custom"
+                            onClick={fecharModal}
+                        >
+                            OK, ENTENDI
+                        </button>
+                    </div>
+                </div>
+            )}
+
             <div className="container-fluid container py-4 d-flex justify-content-center">
                 <div className="app-main-container">
                     {noPalco ? (

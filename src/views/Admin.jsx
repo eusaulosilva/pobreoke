@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import { auth, db } from "../firebase";
-import { ref, onValue, update, remove, set } from "firebase/database";
+import { ref, onValue, update, remove, set, get } from "firebase/database";
 import axios from "axios";
 import "./Admin.css";
 import { useNavigate } from "react-router-dom";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { QRCodeCanvas } from "qrcode.react";
-import { Play, SkipForward, Power, LogOut, QrCode, Search, Square, Monitor, Link } from 'lucide-react';
+// Adicionado o ícone Shuffle aqui nas importações
+import { Play, SkipForward, Power, LogOut, QrCode, Search, Square, Monitor, Link, List, Shuffle } from 'lucide-react';
 import ItemFila from "../components/ItemFIla";
 
 const YOUTUBE_API_KEY = import.meta.env.VITE_YOUTUBE_KEY;
@@ -21,9 +22,13 @@ export default function Admin() {
     const [carregando, setCarregando] = useState(true);
     const [abaAtiva, setAbaAtiva] = useState("fila");
     const [modalAberto, setModalAberto] = useState(false);
-    const [roomCode, setRoomCode] = useState(null);
-    const [qrValue, setQrValue] = useState("");
 
+    // Gestão de Múltiplas Salas
+    const [roomCode, setRoomCode] = useState(null);
+    const [userRooms, setUserRooms] = useState([]);
+    const [customCode, setCustomCode] = useState("");
+
+    const [qrValue, setQrValue] = useState("");
 
     const qrRef = useRef();
     const navigate = useNavigate();
@@ -37,10 +42,22 @@ export default function Admin() {
                 const adminRef = ref(db, `admins/${currentUser.uid}`);
                 onValue(adminRef, (snapshot) => {
                     const data = snapshot.val();
-                    if (snapshot.exists() && typeof data === 'object') {
-                        setRoomCode(data.activeRoom || null);
+                    if (snapshot.exists()) {
+                        if (data.salas) {
+                            setUserRooms(Object.keys(data.salas));
+                        } else if (data.activeRoom) {
+                            // Migração de dados antigos
+                            const oldRoom = data.activeRoom;
+                            update(ref(db, `admins/${currentUser.uid}`), {
+                                salas: { [oldRoom]: true },
+                                activeRoom: null
+                            });
+                            setUserRooms([oldRoom]);
+                        } else {
+                            setUserRooms([]);
+                        }
                     } else {
-                        setRoomCode(null);
+                        setUserRooms([]);
                     }
                     setCarregando(false);
                 });
@@ -63,11 +80,35 @@ export default function Admin() {
         });
     }, [roomCode]);
 
-    const criarNovaSala = () => {
-        const novoCodigo = Math.random().toString(36).substring(2, 8).toUpperCase();
-        update(ref(db, `admins/${user.uid}`), { activeRoom: novoCodigo });
-        set(ref(db, `salas/${novoCodigo}/configuracao`), { adminId: user.uid, criadoEm: Date.now() });
-        setRoomCode(novoCodigo);
+    const criarSala = async (codigoFornecido) => {
+        if (userRooms.length >= 3) {
+            alert("Atenção: Atingiste o limite máximo de 3 salas ativas!");
+            return;
+        }
+
+        let codigoFinal = codigoFornecido.trim().toUpperCase();
+
+        // Se vazio, gera até 6 caracteres aleatórios
+        if (!codigoFinal) {
+            codigoFinal = Math.random().toString(36).substring(2, 8).toUpperCase();
+        }
+
+        if (codigoFinal.length > 6) {
+            alert("O código da sala deve ter no máximo 6 caracteres.");
+            return;
+        }
+
+        // Verifica se a sala já existe
+        const salaCheck = await get(ref(db, `salas/${codigoFinal}`));
+        if (salaCheck.exists()) {
+            alert("Este código de sala já está em uso! Tente outro nome.");
+            return;
+        }
+
+        update(ref(db, `admins/${user.uid}/salas`), { [codigoFinal]: true });
+        set(ref(db, `salas/${codigoFinal}/configuracao`), { adminId: user.uid, criadoEm: Date.now() });
+        setRoomCode(codigoFinal);
+        setCustomCode("");
     };
 
     const deslogar = () => signOut(auth).then(() => navigate("/login"));
@@ -120,7 +161,7 @@ export default function Admin() {
         if (!roomCode) return;
         if (window.confirm(`ENCERRAR NOITE? A sala ${roomCode} será apagada.`)) {
             remove(ref(db, `salas/${roomCode}`));
-            update(ref(db, `admins/${user.uid}`), { activeRoom: null });
+            remove(ref(db, `admins/${user.uid}/salas/${roomCode}`));
             setRoomCode(null);
             setVideos([]);
         }
@@ -135,59 +176,103 @@ export default function Admin() {
         link.click();
     };
 
-    if (carregando) return <div className="text-white text-center mt-5">A preparar os teus discos...</div>;
-    if (!roomCode) {
-        return (
-            <div className="admin-welcome-screen">
-                <div className="admin-glass-panel welcome-card text-center shadow-lg">
-                    <h2 className="welcome-title mb-4">
-                        BEM-VINDO AO <span className="text-neon-pink">POBREOKÊ</span>
-                    </h2>
-                    <p className="welcome-subtitle mb-5">Olá, DJ! Cria a tua sala única agora mesmo.</p>
-
-                    <button className="btn-photo-purple-search w-100 py-3 mb-3 d-flex align-items-center justify-content-center gap-2" onClick={criarNovaSala}>
-                        🚀 CRIAR SALA DE KARAOKÊ
-                    </button>
-
-                    <button className="btn-reset-data-red w-100 py-2 mt-2" onClick={deslogar}>
-                        SAIR DA CONTA
-                    </button>
-                </div>
-            </div>
-        );
-    }
     const copiarLink = () => {
         navigator.clipboard.writeText(qrValue);
         alert("Link copiado com sucesso!");
     };
-    const removerEChamarProximo = (idRemovido) => {
-        // 1. Finaliza a música que o admin clicou para remover
-        atualizarStatus(idRemovido, "finalizado");
 
-        // 2. Para a TV imediatamente limpando o vídeo atual
+    const removerEChamarProximo = (idRemovido) => {
+        atualizarStatus(idRemovido, "finalizado");
         if (roomCode) {
             update(ref(db, `salas/${roomCode}/configuracao`), { videoAtual: null });
         }
-
-        // 3. Busca quem é o próximo da fila (que não seja o que acabou de ser removido)
         const proximo = fila.find(item => item.id !== idRemovido && item.status === "aguardando");
-
-        // 4. Se existir uma próxima pessoa, chama-a automaticamente
         if (proximo) {
             chamarProximo(proximo);
         } else {
-            // Se não houver ninguém na fila, limpa também os campos de pesquisa
             setArtista("");
             setMusica("");
             setVideos([]);
         }
     };
 
+    if (carregando) return <div className="text-white text-center mt-5">A preparar os teus discos...</div>;
+
+    // =========================================================
+    // TELA DE GERENCIAMENTO DE SALAS
+    // =========================================================
+    if (!roomCode) {
+        return (
+            <div className="admin-welcome-screen position-relative">
+
+                {/* BOTÃO DE SAIR NO CANTO SUPERIOR DIREITO */}
+                <button className="btn-logout-top-right" onClick={deslogar} title="Sair da Conta">
+                    <LogOut size={18} /> SAIR
+                </button>
+
+                <div className="salas-container w-100">
+                    <div className="text-center mb-5">
+                        <h2 className="welcome-title mb-2">
+                            GERENCIAR <span className="text-neon-pink">SALAS</span>
+                        </h2>
+                        <p className="welcome-subtitle">Podes ter até 3 salas ativas a funcionar em simultâneo.</p>
+                    </div>
+
+                    <div className="salas-grid mb-4">
+                        {/* Renderiza as salas ativas (1 a 3) */}
+                        {userRooms.map(sala => (
+                            <div key={sala} className="admin-glass-panel sala-card" onClick={() => setRoomCode(sala)}>
+                                <span className="label-header text-neon-cyan mb-2">SALA ATIVA</span>
+                                <h3 className="sala-codigo">{sala}</h3>
+                                <button className="btn-photo-purple-search w-100 mt-auto">ENTRAR NA SALA</button>
+                            </div>
+                        ))}
+
+                        {/* Renderiza os slots vazios (até completar 3) */}
+                        {userRooms.length < 3 && [...Array(3 - userRooms.length)].map((_, i) => (
+                            <div key={`empty-${i}`} className="admin-glass-panel sala-card sala-empty d-flex justify-content-center align-items-center">
+                                <span className="label-header mb-2 opacity-50">ESPAÇO DISPONÍVEL</span>
+                                <span className="opacity-25 mt-2">Vazio</span>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* SEÇÃO DE CRIAR SALA (EMBAIXO DOS CARDS) */}
+                    {userRooms.length < 3 && (
+                        <div className="admin-glass-panel p-4 text-center create-room-section mx-auto" style={{ maxWidth: '600px' }}>
+                            <span className="label-header text-neon-pink mb-3 d-block">CRIAR NOVA SALA</span>
+                            <div className="d-flex flex-column flex-md-row gap-3 justify-content-center align-items-center">
+                                <input
+                                    type="text"
+                                    placeholder="Código Personalizado (opcional)"
+                                    maxLength={6}
+                                    value={customCode}
+                                    onChange={(e) => setCustomCode(e.target.value.toUpperCase())}
+                                    className="photo-style-input text-center flex-grow-1"
+                                />
+                                <div className="d-flex gap-2 w-100 w-md-auto">
+                                    <button className="btn-photo-purple-search flex-grow-1 px-4" onClick={() => criarSala(customCode)}>
+                                        CRIAR
+                                    </button>
+                                    <button className="btn-reset-data-pourple flex-grow-1 px-4 d-flex justify-content-center align-items-center gap-2" onClick={() => criarSala("")} title="Gerar Aleatório">
+                                        <Shuffle size={16} /> ALEATÓRIO
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    }
 
     const linkPedidos = `${window.location.origin}/sala/${roomCode}`;
     const linkDisplay = `${window.location.origin}/display/${roomCode}`;
     const linkQR = `${window.location.origin}/display/qr/${roomCode}`;
 
+    // =========================================================
+    // TELA ORIGINAL DO DASHBOARD DA FILA
+    // =========================================================
     return (
         <div className="admin-page-container">
             <div className="container-fluid d-flex flex-column h-100">
@@ -199,6 +284,9 @@ export default function Admin() {
                     </div>
 
                     <div className="header-actions-zone">
+                        <button className="btn-action-cyan" onClick={() => setRoomCode(null)}>
+                            <List size={14} /> SALAS
+                        </button>
                         <button className="btn-action-cyan" onClick={() => window.open(linkPedidos, '_blank')}>
                             <Link size={14} /> PEDIDOS
                         </button>
@@ -239,7 +327,7 @@ export default function Admin() {
                                         COPIAR LINK
                                     </button>
                                 </div>
-                            
+
                                 <button className="btn-photo-purple-search w-100 py-3 mt-2" onClick={downloadQRCode}>
                                     BAIXAR QR HD
                                 </button>

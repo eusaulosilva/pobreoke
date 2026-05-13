@@ -1,5 +1,3 @@
-
-
 * {
     box-sizing: border-box;
     margin: 0;
@@ -102,10 +100,8 @@
 .admin-main-row {
     flex: 1;
     min-height: 0;
-    /* Essencial para o scroll interno funcionar */
 }
 
-/* Garante que as colunas do Bootstrap ocupem a altura total para permitir scroll */
 .admin-main-row>div[class*='col-'] {
     display: flex;
     flex-direction: column;
@@ -141,7 +137,6 @@
     flex-direction: column;
     gap: 12px;
     min-height: 0;
-    /* Força o conteúdo a respeitar o limite do pai e scrollar */
 }
 
 /* 6. BOTÕES INTERNOS E FORMULÁRIOS */
@@ -156,12 +151,14 @@
     cursor: pointer;
     transition: 0.3s;
 }
+
 .btn-reset-data-red:hover {
     box-shadow: 0 0 12px var(--neon-red);
 }
+
 .btn-reset-data-pourple {
     background: transparent;
-    border: 1px solid var(--neon-purple); /* Roxo neon */
+    border: 1px solid var(--neon-purple);
     color: var(--neon-purple);
     padding: 5px 12px;
     border-radius: 8px;
@@ -170,10 +167,11 @@
     cursor: pointer;
     transition: 0.3s;
 }
+
 .btn-reset-data-pourple:hover {
-  
     box-shadow: 0 0 12px var(--neon-purple);
 }
+
 .btn-photo-purple-search {
     background: #3b2271;
     border: none;
@@ -208,12 +206,11 @@
     box-shadow: 0 0 10px rgba(168, 85, 247, 0.2);
 }
 
-/* 7. BUSCA YOUTUBE - Ajustado para visibilidade */
+/* 7. BUSCA YOUTUBE */
 .yt-video-row {
     display: flex;
     align-items: center;
     background: rgba(30, 41, 59, 0.7);
-    /* Fundo levemente mais claro que o painel */
     padding: 10px 14px;
     border-radius: 14px;
     border: 1px solid rgba(255, 255, 255, 0.05);
@@ -229,7 +226,6 @@
 
 .yt-video-row img {
     width: 75px;
-    /* Ligeiramente maior para destaque */
     aspect-ratio: 16/9;
     object-fit: cover;
     border-radius: 8px;
@@ -308,7 +304,6 @@
 
     .admin-glass-panel {
         height: 550px;
-        /* Mantém altura fixa no mobile para o scroll interno funcionar */
         margin-bottom: 20px;
     }
 }
@@ -335,7 +330,6 @@
     color: var(--neon-purple);
 }
 
-/* Container para organizar o espaçamento */
 .copy-link-container {
     display: flex;
     flex-direction: column;
@@ -344,7 +338,6 @@
     width: 100%;
 }
 
-/* Ajuste no Input para não parecer um bloco solto */
 .copy-link-container .photo-style-input {
     background: rgba(15, 23, 42, 0.6);
     border: 1px solid var(--border-color);
@@ -353,7 +346,6 @@
     padding: 10px;
 }
 
-/* O NOVO BOTÃO COPIAR (Estilo Neon) */
 .btn-copy-neon {
     background: transparent;
     border: 1px solid var(--neon-cyan);
@@ -372,29 +364,43 @@
 .btn-copy-neon:hover {
     background: rgba(34, 211, 238, 0.1);
     box-shadow: 0 0 15px rgba(34, 211, 238, 0.4);
-    
 }
+
 /* --- TELA DE BOAS-VINDAS DO ADMIN (CRIAÇÃO DE SALA) --- */
 .admin-welcome-screen {
     background: radial-gradient(circle at top, #0f172a 0%, var(--bg-dark) 100%);
-    min-height: 100vh; /* min-height é crucial para o mobile */
+    min-height: 100vh;
     width: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
     padding: 20px;
+    position: relative;
 }
 
-/* Sobrescreve o comportamento padrão do painel de vidro apenas para este card */
-.welcome-card {
-    height: auto !important; /* Remove a altura fixa de 550px do mobile */
-    min-height: unset;
-    width: 100%;
-    max-width: 420px;
-    padding: clamp(30px, 6vw, 50px) clamp(20px, 4vw, 40px);
-    border-top: 4px solid var(--neon-purple);
-    justify-content: center;
-    margin: auto; /* Garante centralização absoluta caso o flex falhe */
+/* BOTÃO DE SAIR NO CANTO SUPERIOR DIREITO */
+.btn-logout-top-right {
+    position: absolute;
+    top: 25px;
+    right: 25px;
+    background: transparent;
+    border: 1px solid var(--neon-red);
+    color: var(--neon-red);
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-weight: 800;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 10;
+}
+
+.btn-logout-top-right:hover {
+    background: rgba(220, 38, 38, 0.1);
+    box-shadow: 0 0 15px rgba(220, 38, 38, 0.4);
 }
 
 .welcome-title {
@@ -415,4 +421,90 @@
     text-shadow: 0 0 10px rgba(236, 72, 153, 0.4);
 }
 
+.text-neon-cyan {
+    color: var(--neon-cyan);
+}
 
+/* =======================================================
+   NOVAS CLASSES PARA OS CARDS E CRIAÇÃO
+======================================================= */
+.salas-container {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.salas-grid {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    gap: 20px;
+    width: 100%;
+}
+
+@media (min-width: 768px) {
+    .salas-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 25px;
+    }
+}
+
+.sala-card {
+    padding: 30px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    height: 250px;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s;
+    /* BORDA APENAS EM CIMA */
+    border-top: 4px solid var(--neon-purple);
+}
+
+.sala-card:not(.sala-empty):hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(168, 85, 247, 0.25);
+    /* MUDA A COR APENAS DA BORDA DE CIMA NO HOVER */
+    border-top-color: var(--neon-pink);
+}
+
+.sala-codigo {
+    font-size: 2.2rem;
+    font-weight: 900;
+    color: #fff;
+    margin: auto 0;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.sala-empty {
+    /* BORDA EM CIMA MAS TRACEJADA PARA OS VAZIOS */
+    border-top: 4px dashed rgba(255, 255, 255, 0.15);
+    background: rgba(15, 23, 42, 0.3);
+    cursor: default;
+    box-shadow: none;
+    justify-content: center;
+}
+
+.sala-empty:hover {
+    border-top-color: rgba(168, 85, 247, 0.3);
+}
+
+.create-room-section {
+    border-top: none;
+    border: 1px solid var(--border-color);
+    background: rgba(30, 41, 59, 0.6);
+}
+
+/* Ajuste no mobile para o botão de sair não sobrepor o conteúdo */
+@media (max-width: 768px) {
+    .salas-container {
+        padding-top: 60px;
+    }
+
+    .btn-logout-top-right {
+        top: 15px;
+        right: 15px;
+        padding: 8px 12px;
+        font-size: 0.75rem;
+    }
+}
