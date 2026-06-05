@@ -5,7 +5,6 @@
     display: flex;
     flex-direction: column;
     margin: 0 auto;
-
 }
 
 /* --- HEADER (NOW PLAYING) --- */
@@ -206,17 +205,6 @@ button.btn-add:active {
 }
 
 /* --- TELAS DE STATUS (LOGIN/SALA) --- */
-.status-screen-container {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    background-color: #020617;
-    padding: 20px;
-    text-align: center;
-    width: 100%;
-}
 
 .status-title-neon {
     font-size: clamp(2.5rem, 10vw, 5rem);
@@ -290,22 +278,40 @@ button.btn-add:active {
     box-shadow: 0 0 15px rgba(34, 211, 238, 0.2);
 }
 
-/* Adicione esta classe para o fundo preto da tela principal */
+/* ==========================================================
+   ALINHAMENTOS E FUNDOS (DESKTOP E MOBILE)
+   ========================================================== */
+
+/* Fundo preto base para ambas as telas */
 .pedido-bg-black,
 .status-screen-container {
     background: radial-gradient(circle at center, #1e1b4b 0%, #020617 100%) !important;
-    min-height: 100dvh;
+    min-height: 100vh;
     width: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
+}
+
+/* Mantém a tela de digitar o código perfeitamente centralizada */
+.status-screen-container {
     justify-content: center;
+    padding: 20px;
+}
+
+/* Desgruda a tela de Pedidos do topo no Desktop e Celular */
+.pedido-bg-black {
+    justify-content: flex-start;
+    /* Evita que o topo seja cortado quando a fila cresce */
+    padding-top: 60px;
+    /* Espaço do topo */
+    padding-bottom: 60px;
+    /* Espaço do rodapé */
 }
 
 /* Estilos para o botão de voltar solicitado */
 .back-container {
     margin-top: 25px;
-    /* Espaço após o botão principal */
     display: flex;
     justify-content: center;
 }
@@ -314,7 +320,6 @@ button.btn-add:active {
     background: transparent;
     border: none;
     color: #94a3b8;
-    /* Cor cinza suave combinando com o texto do card */
     font-size: 0.85rem;
     font-weight: 700;
     display: flex;
@@ -333,12 +338,10 @@ button.btn-add:active {
 
 .btn-back-home:hover {
     color: #ec4899;
-    /* Rosa neon ao passar o mouse */
 }
 
 .btn-back-home:hover .arrow {
     transform: translateX(-5px);
-    /* Pequena animação na seta */
 }
 
 .modal-overlay-custom {
@@ -375,4 +378,22 @@ button.btn-add:active {
 
 .modal-btn-custom:hover {
     background: #a855f7;
+}
+
+/* ==========================================================
+   REGRAS ESPECÍFICAS PARA TELAS MENORES (CELULARES)
+   ========================================================== */
+@media (max-width: 768px) {
+
+    /* Dá um respiro lateral ao container principal no celular */
+    .pedido-bg-black {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+
+    /* Garante que os cards e formulários não estouram a largura da tela */
+    .app-main-container {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
 }

@@ -22,7 +22,10 @@ function App() {
       <Route path="/display/:roomId" element={<Display />} />
       <Route path="/display/qr/:roomId" element={<DisplayQR />} />
 
+      {/* Rotas para o Admin */}
       <Route path="/admin" element={<Admin />} />
+      <Route path="/admin/:roomId" element={<Admin />} />
+
       <Route path="/login" element={<Login />} />
     </Routes>
   );

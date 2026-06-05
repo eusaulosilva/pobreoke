@@ -3,7 +3,7 @@ import { auth, db } from "../firebase";
 import { ref, onValue, update, remove, set, get } from "firebase/database";
 import axios from "axios";
 import "./Admin.css";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { QRCodeCanvas } from "qrcode.react";
 import { Play, SkipForward, Power, LogOut, QrCode, Search, Square, Monitor, Link, List, Shuffle } from 'lucide-react';
@@ -12,6 +12,7 @@ import ItemFila from "../components/ItemFIla";
 const YOUTUBE_API_KEY = import.meta.env.VITE_YOUTUBE_KEY;
 
 export default function Admin() {
+    const { roomId } = useParams();
     const [fila, setFila] = useState([]);
     const [historico, setHistorico] = useState([]);
     const [artista, setArtista] = useState("");
@@ -34,6 +35,15 @@ export default function Admin() {
 
     const qrRef = useRef();
     const navigate = useNavigate();
+
+    // Sincroniza o roomCode com o parâmetro do URL
+    useEffect(() => {
+        if (roomId) {
+            setRoomCode(roomId);
+        } else {
+            setRoomCode(null);
+        }
+    }, [roomId]);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -76,7 +86,17 @@ export default function Admin() {
         return onValue(salaRef, (snapshot) => {
             const data = snapshot.val();
             const lista = data ? Object.entries(data).map(([id, val]) => ({ id, ...val })) : [];
-            setFila(lista.filter(i => i.status === "aguardando" || i.status === "iniciado").sort((a, b) => a.timestamp - b.timestamp));
+
+            // Força o cantor atual a ficar sempre na primeira posição
+            setFila(lista
+                .filter(i => i.status === "aguardando" || i.status === "iniciado")
+                .sort((a, b) => {
+                    if (a.status === "iniciado") return -1;
+                    if (b.status === "iniciado") return 1;
+                    return a.timestamp - b.timestamp;
+                })
+            );
+
             setHistorico(lista.filter(i => i.status === "finalizado" || i.status === "cancelado").sort((a, b) => b.timestamp - a.timestamp));
         });
     }, [roomCode]);
@@ -106,7 +126,7 @@ export default function Admin() {
 
         update(ref(db, `admins/${user.uid}/salas`), { [codigoFinal]: true });
         set(ref(db, `salas/${codigoFinal}/configuracao`), { adminId: user.uid, criadoEm: Date.now() });
-        setRoomCode(codigoFinal);
+        navigate(`/admin/${codigoFinal}`);
         setCustomCode("");
     };
 
@@ -153,7 +173,7 @@ export default function Admin() {
         atualizarStatus(itemClicado.id, "iniciado");
         setArtista("");
         setMusica(itemClicado.musica);
-        realizarBusca(`${itemClicado.nome} ${itemClicado.musica}`);
+        realizarBusca(`${itemClicado.musica}`);
     };
 
     const encerrarNoite = () => {
@@ -161,7 +181,7 @@ export default function Admin() {
         if (window.confirm(`ENCERRAR NOITE? A sala ${roomCode} será apagada.`)) {
             remove(ref(db, `salas/${roomCode}`));
             remove(ref(db, `admins/${user.uid}/salas/${roomCode}`));
-            setRoomCode(null);
+            navigate('/admin');
             setVideos([]);
         }
     };
@@ -222,17 +242,30 @@ export default function Admin() {
         e.preventDefault();
         if (dragIndex === null || dragIndex === dropIndex) return;
 
+        // Bloqueia se tentar arrastar o que está a cantar ou soltar em cima dele
+        if (fila[dragIndex].status === "iniciado" || fila[dropIndex].status === "iniciado") {
+            setDragIndex(null);
+            return;
+        }
+
         const novaFila = [...fila];
         const itemArrastado = novaFila.splice(dragIndex, 1)[0];
         novaFila.splice(dropIndex, 0, itemArrastado);
 
         let novoTimestamp;
-        if (dropIndex === 0) {
-            novoTimestamp = novaFila[1].timestamp - 1000;
-        } else if (dropIndex === novaFila.length - 1) {
-            novoTimestamp = novaFila[novaFila.length - 2].timestamp + 1000;
+        const itemAnterior = novaFila[dropIndex - 1];
+        const itemPosterior = novaFila[dropIndex + 1];
+
+        if (!itemAnterior || itemAnterior.status === "iniciado") {
+            if (itemPosterior) {
+                novoTimestamp = itemPosterior.timestamp - 1000;
+            } else {
+                novoTimestamp = Date.now();
+            }
+        } else if (!itemPosterior) {
+            novoTimestamp = itemAnterior.timestamp + 1000;
         } else {
-            novoTimestamp = (novaFila[dropIndex - 1].timestamp + novaFila[dropIndex + 1].timestamp) / 2;
+            novoTimestamp = (itemAnterior.timestamp + itemPosterior.timestamp) / 2;
         }
 
         setDragIndex(null);
@@ -260,7 +293,7 @@ export default function Admin() {
                     </div>
                     <div className="salas-grid mb-4">
                         {userRooms.map(sala => (
-                            <div key={sala} className="admin-glass-panel sala-card" onClick={() => setRoomCode(sala)}>
+                            <div key={sala} className="admin-glass-panel sala-card" onClick={() => navigate(`/admin/${sala}`)}>
                                 <span className="label-header text-neon-cyan mb-2">SALA ATIVA</span>
                                 <h3 className="sala-codigo">{sala}</h3>
                                 <button className="btn-photo-purple-search w-100 mt-auto">ENTRAR NA SALA</button>
@@ -311,7 +344,7 @@ export default function Admin() {
                         <h2 className="room-title">SALA: <span className="neon-text-cyan">{roomCode}</span></h2>
                     </div>
                     <div className="header-actions-zone">
-                        <button className="btn-action-cyan" onClick={() => setRoomCode(null)}><List size={14} /> SALAS</button>
+                        <button className="btn-action-cyan" onClick={() => navigate('/admin')}><List size={14} /> SALAS</button>
                         <button className="btn-action-cyan" onClick={() => window.open(linkPedidos, '_blank')}><Link size={14} /> PEDIDOS</button>
                         <button className="btn-action-pink" onClick={() => window.open(linkDisplay, '_blank')}><Monitor size={14} /> TV</button>
                         <button className="btn-action-cyan" onClick={() => window.open(linkQR, '_blank')}><QrCode size={14} /> QR TV</button>
@@ -359,13 +392,19 @@ export default function Admin() {
                                             return (
                                                 <div
                                                     key={item.id}
-                                                    draggable
-                                                    onDragStart={() => setDragIndex(idx)}
+                                                    draggable={item.status !== "iniciado"}
+                                                    onDragStart={(e) => {
+                                                        if (item.status === "iniciado") {
+                                                            e.preventDefault();
+                                                            return;
+                                                        }
+                                                        setDragIndex(idx);
+                                                    }}
                                                     onDragOver={(e) => e.preventDefault()}
                                                     onDrop={(e) => aoSoltarCard(e, idx)}
                                                     onDragEnd={() => setDragIndex(null)}
                                                     style={{
-                                                        cursor: 'grab',
+                                                        cursor: item.status === "iniciado" ? 'default' : 'grab',
                                                         opacity: dragIndex === idx ? 0.4 : 1,
                                                         transition: 'opacity 0.2s ease-in-out'
                                                     }}

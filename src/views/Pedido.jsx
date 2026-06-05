@@ -17,20 +17,16 @@ export default function Pedido() {
     const [musica, setMusica] = useState("");
     const [uid, setUid] = useState("");
 
-    // Estados para controle de sala e interface
     const [noPalco, setNoPalco] = useState(null);
     const [inputCodigo, setInputCodigo] = useState("");
     const [roomExists, setRoomExists] = useState(true);
 
-    // Estado para o Modal Centralizado (usado apenas para Evidências agora)
     const [modalConfig, setModalConfig] = useState({ visivel: false, titulo: "", texto: "" });
 
-    // Função para abrir o modal
     const exibirModal = (titulo, texto) => {
         setModalConfig({ visivel: true, titulo, texto });
     };
 
-    // Função para fechar o modal
     const fecharModal = () => {
         setModalConfig({ visivel: false, titulo: "", texto: "" });
     };
@@ -38,16 +34,13 @@ export default function Pedido() {
     useEffect(() => {
         if (!roomId) return;
 
-        // Garante que o ID da sala buscado no Firebase seja sempre maiúsculo
         const salaIdFormatado = roomId.toUpperCase();
         const roomRef = ref(db, `salas/${salaIdFormatado}`);
 
-        // Validação se a sala existe em tempo real
         const unsubRoom = onValue(roomRef, (snapshot) => {
             setRoomExists(snapshot.exists());
         });
 
-        // Gestão de UID do utilizador
         let savedUid = localStorage.getItem("pobreoke_uid");
         if (!savedUid) {
             savedUid = "V-" + Math.random().toString(36).substr(2, 5).toUpperCase();
@@ -55,22 +48,26 @@ export default function Pedido() {
         }
         setUid(savedUid);
 
-        // Verifica se o usuário já viu a dica de Evidências nesta sessão
         const avisoVisto = sessionStorage.getItem("aviso_evidencias_visto");
         if (!avisoVisto) {
             exibirModal("🎶 Dica Especial", "Não peça Evidências, pois ela será a música de encerramento do nosso karaokê!");
             sessionStorage.setItem("aviso_evidencias_visto", "true");
         }
 
-        // Monitorização da fila
         const filaRef = ref(db, `salas/${salaIdFormatado}/fila`);
         const unsubscribe = onValue(filaRef, (snapshot) => {
             const data = snapshot.val();
-            const lista = data ? Object.entries(data).map(([id, val]) => ({ id, ...val })) : [];
+            let lista = data ? Object.entries(data).map(([id, val]) => ({ id, ...val })) : [];
+
+            // Ordena a lista geral imediatamente para refletir os arrastos do DJ e quem está no palco
+            lista = lista.sort((a, b) => {
+                if (a.status === "iniciado") return -1;
+                if (b.status === "iniciado") return 1;
+                return a.timestamp - b.timestamp;
+            });
 
             setFila(lista);
 
-            // Identificar quem está no palco
             const cantando = lista.find(item => item.status === "iniciado");
             if (cantando) {
                 setNoPalco({ nome: cantando.nome, musica: cantando.musica });
@@ -89,10 +86,9 @@ export default function Pedido() {
 
     }, [roomId]);
 
-    // Tela exibida caso a sala seja excluída ou o código seja inválido
     if (!roomExists && roomId) {
         return (
-            <div className="status-screen-container">
+            <div className="status-screen-container px-3">
                 <h1 className="status-neon-red ">SALA ENCERRADA</h1>
                 <div className="status-card">
                     <p>Esta sala não existe ou foi finalizada pelo DJ. Que tal começar uma nova?</p>
@@ -114,10 +110,9 @@ export default function Pedido() {
         }
     };
 
-    // Tela inicial para inserir o código da sala
     if (!roomId) {
         return (
-            <div className="status-screen-container">
+            <div className="status-screen-container px-3">
                 <h1 className="status-neon-cyan">POBREOKÊ</h1>
                 <div className="status-card">
                     <p>Digite o código da sala para entrar na cantoria:</p>
@@ -144,9 +139,10 @@ export default function Pedido() {
         );
     }
 
-    // Verifica se o usuário já tem um pedido ativo
     const bloqueado = fila.some(item => item.uid === uid && (item.status === "aguardando" || item.status === "iniciado"));
-    const posicaoNaFila = fila.filter(item => item.status === "aguardando").findIndex(item => item.uid === uid) + 1;
+
+    // Calcula a posição do usuário na fila
+    const posicaoNaFila = fila.filter(item => item.status === "aguardando" || item.status === "iniciado").findIndex(item => item.uid === uid) + 1;
 
     const adicionarAFila = (e) => {
         e.preventDefault();
@@ -156,7 +152,6 @@ export default function Pedido() {
             return;
         }
 
-        // VALIDAÇÃO DA MÚSICA EVIDÊNCIAS
         const termoBusca = musica.toLowerCase();
         const musicaLimpa = termoBusca.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
@@ -166,7 +161,6 @@ export default function Pedido() {
             return;
         }
 
-        // Envia para o Firebase
         push(ref(db, `salas/${roomId.toUpperCase()}/fila`), {
             uid,
             nome,
@@ -175,18 +169,17 @@ export default function Pedido() {
             timestamp: Date.now()
         });
 
-        // Limpa o input apenas, sem popup de sucesso
         setMusica("");
     };
 
     return (
-        <div className="pedido-bg-black position-relative">
+        <div className="pedido-bg-black position-relative min-vh-100">
 
-            {/* MODAL CENTRALIZADO USANDO CLASSES CSS LIMPAS (Só aparece para o aviso de Evidências) */}
             {modalConfig.visivel && (
                 <div
                     className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center modal-overlay-custom"
                     onClick={fecharModal}
+                    style={{ zIndex: 9999 }}
                 >
                     <div
                         className="p-4 text-center d-flex flex-column align-items-center modal-content-custom"
@@ -204,8 +197,9 @@ export default function Pedido() {
                 </div>
             )}
 
-            <div className="container-fluid container py-4 d-flex justify-content-center">
-                <div className="app-main-container">
+            {/* ADICIONADO: pt-5 e mt-4 para criar espaço no topo; px-3 para desgrudar das laterais */}
+            <div className="container-fluid container pt-5 pb-4 mt-4 px-3 d-flex justify-content-center">
+                <div className="app-main-container w-100">
                     {noPalco ? (
                         <Header noPalco={noPalco} />
                     ) : (

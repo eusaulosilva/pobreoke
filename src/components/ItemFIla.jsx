@@ -21,6 +21,7 @@ export default function ItemFila({ item, index, chamarParaPalco, removerDaFila, 
                 <button
                     className={`btn-play-neon ${isRecorrente ? 'botao-amarelo' : ''}`}
                     onClick={() => chamarParaPalco(item)}
+                    disabled={isCurrentlyPlaying} /* BLOQUEIA O BOTÃO QUANDO ESTIVER CANTANDO */
                 >
                     <Play size={14} fill="currentColor" /> PLAY
                 </button>

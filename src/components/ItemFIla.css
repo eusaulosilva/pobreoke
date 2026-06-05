@@ -157,3 +157,11 @@
 .admin-neon-card[draggable="true"]:active {
     cursor: grabbing !important;
 }
+
+/* Efeito de botão bloqueado/desativado quando o cantor já foi chamado */
+.btn-play-neon:disabled {
+    opacity: 0.3 !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+    /* Remove qualquer interação ou hover */
+}
