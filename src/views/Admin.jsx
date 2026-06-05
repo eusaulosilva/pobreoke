@@ -6,7 +6,6 @@ import "./Admin.css";
 import { useNavigate } from "react-router-dom";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { QRCodeCanvas } from "qrcode.react";
-// Adicionado o ícone Shuffle aqui nas importações
 import { Play, SkipForward, Power, LogOut, QrCode, Search, Square, Monitor, Link, List, Shuffle } from 'lucide-react';
 import ItemFila from "../components/ItemFIla";
 
@@ -30,6 +29,9 @@ export default function Admin() {
 
     const [qrValue, setQrValue] = useState("");
 
+    // Estado para o Drag and Drop
+    const [dragIndex, setDragIndex] = useState(null);
+
     const qrRef = useRef();
     const navigate = useNavigate();
 
@@ -46,7 +48,6 @@ export default function Admin() {
                         if (data.salas) {
                             setUserRooms(Object.keys(data.salas));
                         } else if (data.activeRoom) {
-                            // Migração de dados antigos
                             const oldRoom = data.activeRoom;
                             update(ref(db, `admins/${currentUser.uid}`), {
                                 salas: { [oldRoom]: true },
@@ -88,7 +89,6 @@ export default function Admin() {
 
         let codigoFinal = codigoFornecido.trim().toUpperCase();
 
-        // Se vazio, gera até 6 caracteres aleatórios
         if (!codigoFinal) {
             codigoFinal = Math.random().toString(36).substring(2, 8).toUpperCase();
         }
@@ -98,7 +98,6 @@ export default function Admin() {
             return;
         }
 
-        // Verifica se a sala já existe
         const salaCheck = await get(ref(db, `salas/${codigoFinal}`));
         if (salaCheck.exists()) {
             alert("Este código de sala já está em uso! Tente outro nome.");
@@ -196,30 +195,70 @@ export default function Admin() {
         }
     };
 
+    // =========================================================
+    // LÓGICA DE RECORRÊNCIA E ARRASTAR E SOLTAR BLINDADAS
+    // =========================================================
+    const verificarSeRecorrente = (nomeAtual) => {
+        if (!nomeAtual) return false;
+
+        // Remove acentos, espaços extras e coloca tudo em minúsculo
+        const normalizarNome = (nome) => {
+            return nome
+                .toLowerCase()
+                .trim()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "");
+        };
+
+        const nomeFormatado = normalizarNome(nomeAtual);
+
+        const naFila = fila.filter(p => p.nome && normalizarNome(p.nome) === nomeFormatado).length;
+        const noHistorico = historico.filter(p => p.nome && normalizarNome(p.nome) === nomeFormatado).length;
+
+        return (naFila + noHistorico) > 1;
+    };
+
+    const aoSoltarCard = async (e, dropIndex) => {
+        e.preventDefault();
+        if (dragIndex === null || dragIndex === dropIndex) return;
+
+        const novaFila = [...fila];
+        const itemArrastado = novaFila.splice(dragIndex, 1)[0];
+        novaFila.splice(dropIndex, 0, itemArrastado);
+
+        let novoTimestamp;
+        if (dropIndex === 0) {
+            novoTimestamp = novaFila[1].timestamp - 1000;
+        } else if (dropIndex === novaFila.length - 1) {
+            novoTimestamp = novaFila[novaFila.length - 2].timestamp + 1000;
+        } else {
+            novoTimestamp = (novaFila[dropIndex - 1].timestamp + novaFila[dropIndex + 1].timestamp) / 2;
+        }
+
+        setDragIndex(null);
+
+        try {
+            await update(ref(db, `salas/${roomCode}/fila/${itemArrastado.id}`), { timestamp: novoTimestamp });
+        } catch (error) {
+            console.error("Erro ao reordenar:", error);
+        }
+    };
+    // =========================================================
+
     if (carregando) return <div className="text-white text-center mt-5">A preparar os teus discos...</div>;
 
-    // =========================================================
-    // TELA DE GERENCIAMENTO DE SALAS
-    // =========================================================
     if (!roomCode) {
         return (
             <div className="admin-welcome-screen position-relative">
-
-                {/* BOTÃO DE SAIR NO CANTO SUPERIOR DIREITO */}
                 <button className="btn-logout-top-right" onClick={deslogar} title="Sair da Conta">
                     <LogOut size={18} /> SAIR
                 </button>
-
                 <div className="salas-container w-100">
                     <div className="text-center mb-5">
-                        <h2 className="welcome-title mb-2">
-                            GERENCIAR <span className="text-neon-pink">SALAS</span>
-                        </h2>
+                        <h2 className="welcome-title mb-2">GERENCIAR <span className="text-neon-pink">SALAS</span></h2>
                         <p className="welcome-subtitle">Podes ter até 3 salas ativas a funcionar em simultâneo.</p>
                     </div>
-
                     <div className="salas-grid mb-4">
-                        {/* Renderiza as salas ativas (1 a 3) */}
                         {userRooms.map(sala => (
                             <div key={sala} className="admin-glass-panel sala-card" onClick={() => setRoomCode(sala)}>
                                 <span className="label-header text-neon-cyan mb-2">SALA ATIVA</span>
@@ -227,8 +266,6 @@ export default function Admin() {
                                 <button className="btn-photo-purple-search w-100 mt-auto">ENTRAR NA SALA</button>
                             </div>
                         ))}
-
-                        {/* Renderiza os slots vazios (até completar 3) */}
                         {userRooms.length < 3 && [...Array(3 - userRooms.length)].map((_, i) => (
                             <div key={`empty-${i}`} className="admin-glass-panel sala-card sala-empty d-flex justify-content-center align-items-center">
                                 <span className="label-header mb-2 opacity-50">ESPAÇO DISPONÍVEL</span>
@@ -236,8 +273,6 @@ export default function Admin() {
                             </div>
                         ))}
                     </div>
-
-                    {/* SEÇÃO DE CRIAR SALA (EMBAIXO DOS CARDS) */}
                     {userRooms.length < 3 && (
                         <div className="admin-glass-panel p-4 text-center create-room-section mx-auto" style={{ maxWidth: '600px' }}>
                             <span className="label-header text-neon-pink mb-3 d-block">CRIAR NOVA SALA</span>
@@ -251,9 +286,7 @@ export default function Admin() {
                                     className="photo-style-input text-center flex-grow-1"
                                 />
                                 <div className="d-flex gap-2 w-100 w-md-auto">
-                                    <button className="btn-photo-purple-search flex-grow-1 px-4" onClick={() => criarSala(customCode)}>
-                                        CRIAR
-                                    </button>
+                                    <button className="btn-photo-purple-search flex-grow-1 px-4" onClick={() => criarSala(customCode)}>CRIAR</button>
                                     <button className="btn-reset-data-pourple flex-grow-1 px-4 d-flex justify-content-center align-items-center gap-2" onClick={() => criarSala("")} title="Gerar Aleatório">
                                         <Shuffle size={16} /> ALEATÓRIO
                                     </button>
@@ -270,38 +303,20 @@ export default function Admin() {
     const linkDisplay = `${window.location.origin}/display/${roomCode}`;
     const linkQR = `${window.location.origin}/display/qr/${roomCode}`;
 
-    // =========================================================
-    // TELA ORIGINAL DO DASHBOARD DA FILA
-    // =========================================================
     return (
         <div className="admin-page-container">
             <div className="container-fluid d-flex flex-column h-100">
                 <header className="admin-header">
                     <div className="header-title-zone">
-                        <h2 className="room-title">
-                            SALA: <span className="neon-text-cyan">{roomCode}</span>
-                        </h2>
+                        <h2 className="room-title">SALA: <span className="neon-text-cyan">{roomCode}</span></h2>
                     </div>
-
                     <div className="header-actions-zone">
-                        <button className="btn-action-cyan" onClick={() => setRoomCode(null)}>
-                            <List size={14} /> SALAS
-                        </button>
-                        <button className="btn-action-cyan" onClick={() => window.open(linkPedidos, '_blank')}>
-                            <Link size={14} /> PEDIDOS
-                        </button>
-                        <button className="btn-action-pink" onClick={() => window.open(linkDisplay, '_blank')}>
-                            <Monitor size={14} /> TV
-                        </button>
-                        <button className="btn-action-cyan" onClick={() => window.open(linkQR, '_blank')}>
-                            <QrCode size={14} /> QR TV
-                        </button>
-                        <button className="btn-action-cyan" onClick={() => setModalAberto(true)}>
-                            <QrCode size={16} /> QR
-                        </button>
-                        <button className="btn-action-red" onClick={deslogar}>
-                            <LogOut size={16} /> SAIR
-                        </button>
+                        <button className="btn-action-cyan" onClick={() => setRoomCode(null)}><List size={14} /> SALAS</button>
+                        <button className="btn-action-cyan" onClick={() => window.open(linkPedidos, '_blank')}><Link size={14} /> PEDIDOS</button>
+                        <button className="btn-action-pink" onClick={() => window.open(linkDisplay, '_blank')}><Monitor size={14} /> TV</button>
+                        <button className="btn-action-cyan" onClick={() => window.open(linkQR, '_blank')}><QrCode size={14} /> QR TV</button>
+                        <button className="btn-action-cyan" onClick={() => setModalAberto(true)}><QrCode size={16} /> QR</button>
+                        <button className="btn-action-red" onClick={deslogar}><LogOut size={16} /> SAIR</button>
                     </div>
                 </header>
 
@@ -310,31 +325,20 @@ export default function Admin() {
                         <div className="modal-content-neon" onClick={(e) => e.stopPropagation()}>
                             <button className="modal-close" onClick={() => setModalAberto(false)}>&times;</button>
                             <h3 className="text-white fw-bold mb-4">Acesso à Sala</h3>
-
                             <div className="qr-section" ref={qrRef}>
                                 <div className="qr-wrapper bg-white p-3 rounded-4 mb-4 d-inline-block">
                                     <QRCodeCanvas value={linkPedidos} size={200} level={"H"} />
                                 </div>
-
                                 <div className="copy-link-container mb-4">
-                                    <input
-                                        type="text"
-                                        className="photo-style-input text-center"
-                                        value={linkPedidos}
-                                        readOnly
-                                    />
-                                    <button className="btn-copy-neon" onClick={copiarLink}>
-                                        COPIAR LINK
-                                    </button>
+                                    <input type="text" className="photo-style-input text-center" value={linkPedidos} readOnly />
+                                    <button className="btn-copy-neon" onClick={copiarLink}>COPIAR LINK</button>
                                 </div>
-
-                                <button className="btn-photo-purple-search w-100 py-3 mt-2" onClick={downloadQRCode}>
-                                    BAIXAR QR HD
-                                </button>
+                                <button className="btn-photo-purple-search w-100 py-3 mt-2" onClick={downloadQRCode}>BAIXAR QR HD</button>
                             </div>
                         </div>
                     </div>
                 )}
+
                 <div className="row g-4 flex-grow-1 admin-main-row">
                     <div className="col-lg-6 col-12 d-flex flex-column">
                         <div className="admin-glass-panel">
@@ -349,15 +353,33 @@ export default function Admin() {
                             <div className="panel-body-scroll">
                                 {abaAtiva === 'fila' ? (
                                     fila.length === 0 ? <p className="text-white text-center mt-4">Fila vazia.</p> :
-                                        fila.map((item, idx) => (
-                                            <ItemFila
-                                                key={item.id}
-                                                item={item}
-                                                index={idx}
-                                                chamarParaPalco={chamarProximo}
-                                                removerDaFila={removerEChamarProximo}
-                                            />
-                                        ))
+                                        fila.map((item, idx) => {
+                                            const isRecorrente = verificarSeRecorrente(item.nome);
+
+                                            return (
+                                                <div
+                                                    key={item.id}
+                                                    draggable
+                                                    onDragStart={() => setDragIndex(idx)}
+                                                    onDragOver={(e) => e.preventDefault()}
+                                                    onDrop={(e) => aoSoltarCard(e, idx)}
+                                                    onDragEnd={() => setDragIndex(null)}
+                                                    style={{
+                                                        cursor: 'grab',
+                                                        opacity: dragIndex === idx ? 0.4 : 1,
+                                                        transition: 'opacity 0.2s ease-in-out'
+                                                    }}
+                                                >
+                                                    <ItemFila
+                                                        item={item}
+                                                        index={idx}
+                                                        chamarParaPalco={chamarProximo}
+                                                        removerDaFila={removerEChamarProximo}
+                                                        isRecorrente={isRecorrente}
+                                                    />
+                                                </div>
+                                            );
+                                        })
                                 ) : (
                                     historico.map(item => (
                                         <div key={item.id} className="admin-neon-card mb-3 opacity-50">

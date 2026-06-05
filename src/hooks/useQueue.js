@@ -1,33 +1,65 @@
 import { useState, useEffect } from 'react';
-import { ref, onValue, push, remove, update } from 'firebase/database';
-import { db } from '../firebase';
+import { ref, onValue, remove, update } from 'firebase/database';
+import { db } from '../firebase'; // Ajuste o caminho conforme o seu projeto
 
 export function useQueue() {
     const [fila, setFila] = useState([]);
-    const [loading, setLoading] = useState(true);
 
+    // Escuta a fila em tempo real
     useEffect(() => {
         const filaRef = ref(db, 'fila');
-        return onValue(filaRef, (snapshot) => {
+        const unsubscribe = onValue(filaRef, (snapshot) => {
             const data = snapshot.val();
-            const lista = data
-                ? Object.entries(data).map(([id, val]) => ({ id, ...val }))
-                : [];
-            // Ordena por ordem de chegada
-            setFila(lista.sort((a, b) => a.timestamp - b.timestamp));
-            setLoading(false);
+            if (data) {
+                // Converte o objeto do Firebase para um array e ordena pelo timestamp
+                const filaArray = Object.keys(data).map(key => ({
+                    id: key,
+                    ...data[key]
+                })).sort((a, b) => a.timestamp - b.timestamp);
+
+                setFila(filaArray);
+            } else {
+                setFila([]);
+            }
         });
+
+        return () => unsubscribe();
     }, []);
 
-    const adicionarPedido = (dados) => push(ref(db, 'fila'), {
-        ...dados,
-        status: 'aguardando',
-        timestamp: Date.now()
-    });
+    // Remove um pedido específico
+    const removerDaFila = async (idPedido) => {
+        try {
+            const pedidoRef = ref(db, `fila/${idPedido}`);
+            await remove(pedidoRef);
+        } catch (error) {
+            console.error("Erro ao remover da fila:", error);
+        }
+    };
 
-    const removerPedido = (id) => remove(ref(db, `fila/${id}`));
+    // Move a posição trocando o timestamp com o item vizinho
+    const moverPosicao = async (indexAtual, direcao) => {
+        try {
+            const itemAtual = fila[indexAtual];
+            let itemDestino;
 
-    const atualizarStatus = (id, status) => update(ref(db, `fila/${id}`), { status });
+            if (direcao === 'cima' && indexAtual > 0) {
+                itemDestino = fila[indexAtual - 1];
+            } else if (direcao === 'baixo' && indexAtual < fila.length - 1) {
+                itemDestino = fila[indexAtual + 1];
+            }
 
-    return { fila, loading, adicionarPedido, removerPedido, atualizarStatus };
+            if (!itemDestino) return;
+
+            const atualRef = ref(db, `fila/${itemAtual.id}`);
+            const destinoRef = ref(db, `fila/${itemDestino.id}`);
+
+            // Inverte os timestamps para trocar a ordem
+            await update(atualRef, { timestamp: itemDestino.timestamp });
+            await update(destinoRef, { timestamp: itemAtual.timestamp });
+        } catch (error) {
+            console.error("Erro ao mover posição:", error);
+        }
+    };
+
+    return { fila, removerDaFila, moverPosicao };
 }

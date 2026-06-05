@@ -1,22 +1,24 @@
 /* --- ESTILO NEON PROFISSIONAL ITEMFILA --- */
 
 .admin-neon-card {
-    background-color: #1e293b; /* Azul escuro da foto */
+    background-color: #1e293b;
+    /* Azul escuro da foto */
     border-radius: 16px;
     padding: 18px 22px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 15px;
-    
+
     /* ESPAÇAMENTO ENTRE OS ITENS */
-    margin-bottom: 16px; 
-    
+    margin-bottom: 16px;
+
     border: 1px solid rgba(255, 255, 255, 0.05);
     border-left: 6px solid var(--neon-cyan);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    min-width: 0; /* Permite que o texto encolha */
+    min-width: 0;
+    /* Permite que o texto encolha */
 }
 
 /* Efeito ao passar o rato */
@@ -36,7 +38,8 @@
 /* ÁREA DE TEXTO */
 .card-content {
     flex: 1;
-    min-width: 0; /* Essencial para o truncate (...) */
+    min-width: 0;
+    /* Essencial para o truncate (...) */
     display: flex;
     flex-direction: column;
 }
@@ -61,7 +64,8 @@
     margin: 0;
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis; /* Corta o texto longo com ... */
+    text-overflow: ellipsis;
+    /* Corta o texto longo com ... */
 }
 
 .song-subtitle {
@@ -80,7 +84,8 @@
 .admin-controls-btns {
     display: flex;
     gap: 12px;
-    flex-shrink: 0; /* Garante que os botões nunca encolhem */
+    flex-shrink: 0;
+    /* Garante que os botões nunca encolhem */
 }
 
 .btn-play-neon {
@@ -123,4 +128,32 @@
     background: var(--neon-pink);
     color: white;
     box-shadow: 0 0 15px var(--neon-pink);
+}
+
+
+/* 1. Muda a borda lateral esquerda do Card para amarelo */
+.admin-neon-card.is-recorrente {
+    border-left-color: #FFD700 !important;
+}
+
+/* 2. Muda a cor do número da fila (#1, #2...) para amarelo */
+.index.texto-amarelo {
+    color: #FFD700 !important;
+    text-shadow: 0 0 8px rgba(255, 215, 0, 0.6) !important;
+}
+
+/* 3. Muda a borda e cor do botão PLAY para amarelo */
+.btn-play-neon.botao-amarelo {
+    border-color: #FFD700 !important;
+    color: #FFD700 !important;
+}
+
+/* Fundo amarelo bem fraquinho ao passar o mouse no botão */
+.btn-play-neon.botao-amarelo:hover {
+    background-color: rgba(255, 215, 0, 0.1) !important;
+}
+
+/* Mantém o cursor de agarrar quando arrastar (Drag & Drop) */
+.admin-neon-card[draggable="true"]:active {
+    cursor: grabbing !important;
 }

@@ -2,14 +2,14 @@ import React from 'react';
 import { Play, X } from 'lucide-react';
 import './ItemFIla.css';
 
-export default function ItemFila({ item, index, chamarParaPalco, removerDaFila }) {
+export default function ItemFila({ item, index, chamarParaPalco, removerDaFila, isRecorrente }) {
     const isCurrentlyPlaying = item.status === "iniciado";
 
     return (
-        <div className={`admin-neon-card ${isCurrentlyPlaying ? 'active' : ''}`}>
+        <div className={`admin-neon-card ${isCurrentlyPlaying ? 'active' : ''} ${isRecorrente ? 'is-recorrente' : ''}`}>
             <div className="card-content">
                 <div className="name-wrapper">
-                    <span className="index">#{index + 1}</span>
+                    <span className={`index ${isRecorrente ? 'texto-amarelo' : ''}`}>#{index + 1}</span>
                     <h4 className="singer-title">
                         {item.nome} {isCurrentlyPlaying && "🎤"}
                     </h4>
@@ -18,7 +18,10 @@ export default function ItemFila({ item, index, chamarParaPalco, removerDaFila }
             </div>
 
             <div className="admin-controls-btns">
-                <button className="btn-play-neon" onClick={() => chamarParaPalco(item)}>
+                <button
+                    className={`btn-play-neon ${isRecorrente ? 'botao-amarelo' : ''}`}
+                    onClick={() => chamarParaPalco(item)}
+                >
                     <Play size={14} fill="currentColor" /> PLAY
                 </button>
                 <button className="btn-x-neon" onClick={() => removerDaFila(item.id)}>
