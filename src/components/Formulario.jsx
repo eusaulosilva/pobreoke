@@ -29,7 +29,6 @@ export default function Formulario({ nome, setNome, musica, setMusica, adicionar
                     type="submit"
                     className="btn-add w-100"
                     disabled={bloqueado}
-                    style={{ opacity: bloqueado ? 0.5 : 1 }}
                 >
                     {bloqueado ? "VOCÊ JÁ ESTÁ NA FILA" : "ENTRAR NA FILA"}
                 </button>

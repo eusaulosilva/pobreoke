@@ -91,9 +91,8 @@ export default function Admin() {
             codigoFinal = Math.random().toString(36).substring(2, 8).toUpperCase();
         }
 
-
-        if (codigoFinal.length < 3 || codigoFinal.length > 6) {
-            alert("O código da sala deve ter entre 3 e 6 caracteres.");
+        if (codigoFinal.length > 6) {
+            alert("O código da sala deve ter no máximo 6 caracteres.");
             return;
         }
 
@@ -174,15 +173,17 @@ export default function Admin() {
         alert("Link copiado com sucesso!");
     };
 
-    const removerEChamarProximo = (idRemovido) => {
+    // Nova função: apenas remove/finaliza o item sem chamar o próximo automaticamente
+    const removerItemDaFila = (idRemovido) => {
+        const itemSendoRemovido = fila.find(item => item.id === idRemovido);
+
         atualizarStatus(idRemovido, "finalizado");
-        if (roomCode) {
-            update(ref(db, `salas/${roomCode}/configuracao`), { videoAtual: null });
-        }
-        const proximo = fila.find(item => item.id !== idRemovido && item.status === "aguardando");
-        if (proximo) {
-            chamarProximo(proximo);
-        } else {
+
+        // Só para a TV se a pessoa removida for quem estava a cantar
+        if (itemSendoRemovido && itemSendoRemovido.status === "iniciado") {
+            if (roomCode) {
+                update(ref(db, `salas/${roomCode}/configuracao`), { videoAtual: null });
+            }
             setArtista("");
             setMusica("");
             setVideos([]);
@@ -376,7 +377,7 @@ export default function Admin() {
                                                         item={item}
                                                         index={idx}
                                                         chamarParaPalco={chamarProximo}
-                                                        removerDaFila={removerEChamarProximo}
+                                                        removerDaFila={removerItemDaFila}
                                                         isRecorrente={isRecorrente}
                                                     />
                                                 </div>

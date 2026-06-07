@@ -2,70 +2,67 @@ import React, { useState, useEffect } from "react";
 import { db } from "../firebase";
 import { ref, onValue } from "firebase/database";
 import { useParams, useNavigate } from "react-router-dom";
+import { useQueue } from "../hooks/useQueue";
 import "./Display.css";
 
 export default function Display() {
     const { roomId } = useParams();
     const navigate = useNavigate();
 
+    const salaIdFormatado = roomId ? roomId.toUpperCase() : null;
+
+    const { fila } = useQueue(salaIdFormatado);
+
     const [videoId, setVideoId] = useState(null);
     const [noPalco, setNoPalco] = useState({ nome: "AGUARDANDO...", musica: "ESCOLHA UMA MÚSICA" });
-    const [roomExists, setRoomExists] = useState(null); // Iniciamos como null para saber que ainda está validando
+    const [roomExists, setRoomExists] = useState(null);
     const [carregando, setCarregando] = useState(true);
 
     useEffect(() => {
-        if (!roomId) {
+        if (!salaIdFormatado) {
             setRoomExists(false);
             setCarregando(false);
             return;
         }
 
-        const roomRef = ref(db, `salas/${roomId.toUpperCase()}`);
-
-        // Verifica a existência da sala uma única vez no início e depois monitora
+        const roomRef = ref(db, `salas/${salaIdFormatado}`);
         const unsub = onValue(roomRef, (snapshot) => {
-            const exists = snapshot.exists();
-            setRoomExists(exists);
-            setCarregando(false); // Para de carregar assim que recebe a primeira resposta do Firebase
+            setRoomExists(snapshot.exists());
+            setCarregando(false);
         });
 
         return () => unsub();
-    }, [roomId]);
+    }, [salaIdFormatado]);
 
     useEffect(() => {
-        if (!roomId || !roomExists) return;
+        if (!salaIdFormatado || !roomExists) return;
 
-        const configRef = ref(db, `salas/${roomId}/configuracao`);
+        const configRef = ref(db, `salas/${salaIdFormatado}/configuracao`);
         const unsubConfig = onValue(configRef, (snapshot) => {
             const data = snapshot.val();
             setVideoId(data?.videoAtual || null);
         });
 
-        const filaRef = ref(db, `salas/${roomId}/fila`);
-        const unsubFila = onValue(filaRef, (snapshot) => {
-            const data = snapshot.val();
-            const lista = data ? Object.entries(data).map(([id, val]) => ({ id, ...val })) : [];
-            const cantando = lista.find(item => item.status === "iniciado");
+        return () => unsubConfig();
+    }, [salaIdFormatado, roomExists]);
 
+    useEffect(() => {
+        if (fila && fila.length > 0) {
+            const cantando = fila.find(item => item.status === "iniciado");
             if (cantando) {
                 setNoPalco(cantando);
             } else {
                 setNoPalco({ nome: "AGUARDANDO...", musica: "ESCOLHA UMA MÚSICA" });
             }
-        });
+        } else {
+            setNoPalco({ nome: "AGUARDANDO...", musica: "ESCOLHA UMA MÚSICA" });
+        }
+    }, [fila]);
 
-        return () => {
-            unsubConfig();
-            unsubFila();
-        };
-    }, [roomId, roomExists]);
-
-    // 1. TELA DE CARREGAMENTO (Evita mostrar o fundo antigo ao dar F5)
     if (carregando) {
         return <div className="display-status-wrapper loading-bg"></div>;
     }
 
-    // 2. TELA DE ERRO / SALA APAGADA (Com botão de volta)
     if (!roomExists) {
         return (
             <div className="display-status-wrapper error-bg">
@@ -84,7 +81,6 @@ export default function Display() {
         );
     }
 
-    // 3. VÍDEO TOCANDO
     if (videoId) {
         return (
             <div className="video-full-screen-container">
@@ -94,18 +90,10 @@ export default function Display() {
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
                 ></iframe>
-
-                <div className="overlay-footer">
-                    <span className="badge-ao-vivo fw-bold ">NO PALCO 🎤</span>
-                    <span className="info-text fw-bold">
-                        {noPalco.nome} — <span style={{ color: 'var(--neon-pink)' }}>{noPalco.musica}</span>
-                    </span>
-                </div>
             </div>
         );
     }
 
-    // 4. STANDBY
     return (
         <div className="display-container container-fluid">
             <h1 className="status-neon-cyan">POBREOKÊ</h1>

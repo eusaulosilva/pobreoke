@@ -1,27 +1,23 @@
 import React from "react";
 
-export default function ListaFila({ fila, chamarParaPalco, removerDaFila }) {
+export default function ListaFila({ fila }) {
     return (
         <div className="lista-container">
-            <h2 style={{ color: "var(--text-white)", fontSize: "0.8rem", textTransform: "uppercase", marginBottom: "15px", textAlign: "left" }}>
+            <h2 className="lista-titulo">
                 Próximos na Fila
             </h2>
-            {fila
-                .filter(item => item.status === "aguardando" || item.status === "iniciado")
-                .sort((a, b) => {
-                    // Trava quem está cantando absoluto no topo
-                    if (a.status === "iniciado") return -1;
-                    if (b.status === "iniciado") return 1;
-                    return a.timestamp - b.timestamp;
-                })
-                .map((item, index) => (
-                    <div key={item.id} className="queue-item" style={{ borderColor: item.status === "iniciado" ? "var(--neon-pink)" : "var(--neon-cyan)" }}>
-                        <div className="queue-info">
-                            <h4>{index + 1}. {item.nome} {item.status === "iniciado" && "🎤"}</h4>
-                            <p>{item.musica}</p>
-                        </div>
+
+            {fila.map((item, index) => (
+                <div
+                    key={item.id}
+                    className={`queue-item ${item.status === "iniciado" ? "cantando-agora" : "na-espera"}`}
+                >
+                    <div className="queue-info">
+                        <h4>{index + 1}. {item.nome} {item.status === "iniciado" && "🎤"}</h4>
+                        <p>{item.musica}</p>
                     </div>
-                ))}
+                </div>
+            ))}
         </div>
     );
 }
