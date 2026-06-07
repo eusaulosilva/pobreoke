@@ -50,11 +50,11 @@ export default function Pedido() {
         }
         setUid(savedUid);
 
-        const avisoVisto = sessionStorage.getItem("aviso_evidencias_visto");
-        if (!avisoVisto) {
-            exibirModal("🎶 Dica Especial", "Não peças Evidências, pois ela será a música de encerramento do nosso karaokê!");
-            sessionStorage.setItem("aviso_evidencias_visto", "true");
-        }
+        // const avisoVisto = sessionStorage.getItem("aviso_evidencias_visto");
+        // if (!avisoVisto) {
+        //     exibirModal("🎶 Dica Especial", "Não peças Evidências, pois ela será a música de encerramento do nosso karaokê!");
+        //     sessionStorage.setItem("aviso_evidencias_visto", "true");
+        // }
 
         return () => unsubRoom();
 
@@ -141,11 +141,11 @@ export default function Pedido() {
         const termoBusca = musica.toLowerCase();
         const musicaLimpa = termoBusca.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-        if (musicaLimpa.includes("evidencia") || termoBusca.includes("chitao")) {
-            exibirModal("Música Bloqueada 🚫", "Não podes pedir Evidências, pois ela será a música de encerramento do karaokê!");
-            setMusica("");
-            return;
-        }
+        // if (musicaLimpa.includes("evidencia") || termoBusca.includes("chitao")) {
+        //     exibirModal("Música Bloqueada 🚫", "Não podes pedir Evidências, pois ela será a música de encerramento do karaokê!");
+        //     setMusica("");
+        //     return;
+        // }
 
         adicionarItemNaFila({
             uid,
