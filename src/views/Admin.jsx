@@ -91,8 +91,8 @@ export default function Admin() {
             codigoFinal = Math.random().toString(36).substring(2, 8).toUpperCase();
         }
 
-        if (codigoFinal.length > 6) {
-            alert("O código da sala deve ter no máximo 6 caracteres.");
+        if (codigoFinal.length < 3 || codigoFinal.length > 6) {
+            alert("O código da sala deve ter entre 3 e 6 caracteres.");
             return;
         }
 
