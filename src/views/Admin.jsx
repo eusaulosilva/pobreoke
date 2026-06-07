@@ -190,20 +190,11 @@ export default function Admin() {
         }
     };
 
-    const verificarSeRecorrente = (nomeAtual) => {
-        if (!nomeAtual) return false;
+    const verificarSeRecorrente = (uidAtual) => {
+        if (!uidAtual) return false;
 
-        const normalizarNome = (nome) => {
-            return nome
-                .toLowerCase()
-                .trim()
-                .normalize("NFD")
-                .replace(/[\u0300-\u036f]/g, "");
-        };
-
-        const nomeFormatado = normalizarNome(nomeAtual);
-        const naFila = fila.filter(p => p.nome && normalizarNome(p.nome) === nomeFormatado).length;
-        const noHistorico = historico.filter(p => p.nome && normalizarNome(p.nome) === nomeFormatado).length;
+        const naFila = fila.filter(p => p.uid === uidAtual).length;
+        const noHistorico = historico.filter(p => p.uid === uidAtual).length;
 
         return (naFila + noHistorico) > 1;
     };
@@ -355,7 +346,7 @@ export default function Admin() {
                                 {abaAtiva === 'fila' ? (
                                     fila.length === 0 ? <p className="text-white text-center mt-4">Fila vazia.</p> :
                                         fila.map((item, idx) => {
-                                            const isRecorrente = verificarSeRecorrente(item.nome);
+                                            const isRecorrente = verificarSeRecorrente(item.uid);
 
                                             return (
                                                 <div
