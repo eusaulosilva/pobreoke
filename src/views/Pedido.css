@@ -302,11 +302,8 @@ button.btn-add:active {
 /* Desgruda a tela de Pedidos do topo no Desktop e Celular */
 .pedido-bg-black {
     justify-content: flex-start;
-    /* Evita que o topo seja cortado quando a fila cresce */
     padding-top: 60px;
-    /* Espaço do topo */
     padding-bottom: 60px;
-    /* Espaço do rodapé */
 }
 
 /* Estilos para o botão de voltar solicitado */

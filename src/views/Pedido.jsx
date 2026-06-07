@@ -1,18 +1,22 @@
 import React, { useState, useEffect } from "react";
 import { db } from "../firebase";
-import { ref, push, onValue } from "firebase/database";
+import { ref, onValue } from "firebase/database";
 import { useParams, useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import Formulario from "../components/Formulario";
 import ListaFila from "../components/ListaFila";
 import StatusFila from "../components/StatusFila";
+import { useQueue } from "../hooks/useQueue";
 import "./Pedido.css";
 
 export default function Pedido() {
     const { roomId } = useParams();
     const navigate = useNavigate();
 
-    const [fila, setFila] = useState([]);
+    const salaIdFormatado = roomId ? roomId.toUpperCase() : null;
+    
+    const { fila, adicionarAFila: adicionarItemNaFila } = useQueue(salaIdFormatado);
+
     const [nome, setNome] = useState("");
     const [musica, setMusica] = useState("");
     const [uid, setUid] = useState("");
@@ -34,9 +38,7 @@ export default function Pedido() {
     useEffect(() => {
         if (!roomId) return;
 
-        const salaIdFormatado = roomId.toUpperCase();
         const roomRef = ref(db, `salas/${salaIdFormatado}`);
-
         const unsubRoom = onValue(roomRef, (snapshot) => {
             setRoomExists(snapshot.exists());
         });
@@ -50,41 +52,26 @@ export default function Pedido() {
 
         const avisoVisto = sessionStorage.getItem("aviso_evidencias_visto");
         if (!avisoVisto) {
-            exibirModal("🎶 Dica Especial", "Não peça Evidências, pois ela será a música de encerramento do nosso karaokê!");
+            exibirModal("🎶 Dica Especial", "Não peças Evidências, pois ela será a música de encerramento do nosso karaokê!");
             sessionStorage.setItem("aviso_evidencias_visto", "true");
         }
 
-        const filaRef = ref(db, `salas/${salaIdFormatado}/fila`);
-        const unsubscribe = onValue(filaRef, (snapshot) => {
-            const data = snapshot.val();
-            let lista = data ? Object.entries(data).map(([id, val]) => ({ id, ...val })) : [];
+        return () => unsubRoom();
 
-            // Ordena a lista geral imediatamente para refletir os arrastos do DJ e quem está no palco
-            lista = lista.sort((a, b) => {
-                if (a.status === "iniciado") return -1;
-                if (b.status === "iniciado") return 1;
-                return a.timestamp - b.timestamp;
-            });
+    }, [roomId, salaIdFormatado]);
 
-            setFila(lista);
-
-            const cantando = lista.find(item => item.status === "iniciado");
+    useEffect(() => {
+        if (fila && fila.length > 0) {
+            const cantando = fila.find(item => item.status === "iniciado");
             if (cantando) {
                 setNoPalco({ nome: cantando.nome, musica: cantando.musica });
             } else {
                 setNoPalco({ nome: "Livre", musica: "Aguardando próximo cantor..." });
             }
-        }, (error) => {
-            console.error("Erro ao ler Firebase:", error);
-            setNoPalco({ nome: "Erro", musica: "Sala não encontrada" });
-        });
-
-        return () => {
-            unsubRoom();
-            unsubscribe();
-        };
-
-    }, [roomId]);
+        } else {
+            setNoPalco({ nome: "Livre", musica: "Aguardando próximo cantor..." });
+        }
+    }, [fila]);
 
     if (!roomExists && roomId) {
         return (
@@ -115,7 +102,7 @@ export default function Pedido() {
             <div className="status-screen-container px-3">
                 <h1 className="status-neon-cyan">POBREOKÊ</h1>
                 <div className="status-card">
-                    <p>Digite o código da sala para entrar na cantoria:</p>
+                    <p>Digita o código da sala para entrar na cantoria:</p>
                     <form onSubmit={handleAcederSala}>
                         <input
                             type="text"
@@ -141,7 +128,6 @@ export default function Pedido() {
 
     const bloqueado = fila.some(item => item.uid === uid && (item.status === "aguardando" || item.status === "iniciado"));
 
-    // Calcula a posição do usuário na fila
     const posicaoNaFila = fila.filter(item => item.status === "aguardando" || item.status === "iniciado").findIndex(item => item.uid === uid) + 1;
 
     const adicionarAFila = (e) => {
@@ -161,12 +147,11 @@ export default function Pedido() {
             return;
         }
 
-        push(ref(db, `salas/${roomId.toUpperCase()}/fila`), {
+        adicionarItemNaFila({
             uid,
             nome,
             musica,
-            status: "aguardando",
-            timestamp: Date.now()
+            status: "aguardando"
         });
 
         setMusica("");
@@ -179,7 +164,6 @@ export default function Pedido() {
                 <div
                     className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center modal-overlay-custom"
                     onClick={fecharModal}
-                    style={{ zIndex: 9999 }}
                 >
                     <div
                         className="p-4 text-center d-flex flex-column align-items-center modal-content-custom"
@@ -197,7 +181,6 @@ export default function Pedido() {
                 </div>
             )}
 
-            {/* ADICIONADO: pt-5 e mt-4 para criar espaço no topo; px-3 para desgrudar das laterais */}
             <div className="container-fluid container pt-5 pb-4 mt-4 px-3 d-flex justify-content-center">
                 <div className="app-main-container w-100">
                     {noPalco ? (

@@ -8,13 +8,12 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import { QRCodeCanvas } from "qrcode.react";
 import { Play, SkipForward, Power, LogOut, QrCode, Search, Square, Monitor, Link, List, Shuffle } from 'lucide-react';
 import ItemFila from "../components/ItemFIla";
+import { useQueue } from "../hooks/useQueue";
 
 const YOUTUBE_API_KEY = import.meta.env.VITE_YOUTUBE_KEY;
 
 export default function Admin() {
     const { roomId } = useParams();
-    const [fila, setFila] = useState([]);
-    const [historico, setHistorico] = useState([]);
     const [artista, setArtista] = useState("");
     const [musica, setMusica] = useState("");
     const [videos, setVideos] = useState([]);
@@ -27,7 +26,6 @@ export default function Admin() {
     const [roomCode, setRoomCode] = useState(null);
     const [userRooms, setUserRooms] = useState([]);
     const [customCode, setCustomCode] = useState("");
-
     const [qrValue, setQrValue] = useState("");
 
     // Estado para o Drag and Drop
@@ -36,10 +34,14 @@ export default function Admin() {
     const qrRef = useRef();
     const navigate = useNavigate();
 
+    // Integração com o hook unificado de gerenciamento de fila
+    const { fila, historico, atualizarStatus, atualizarTimestamp } = useQueue(roomCode);
+
     // Sincroniza o roomCode com o parâmetro do URL
     useEffect(() => {
         if (roomId) {
             setRoomCode(roomId);
+            setQrValue(`${window.location.origin}/sala/${roomId}`);
         } else {
             setRoomCode(null);
         }
@@ -77,30 +79,6 @@ export default function Admin() {
         return () => unsubscribe();
     }, [navigate]);
 
-    useEffect(() => {
-        if (!roomCode) return;
-        if (roomCode) {
-            setQrValue(`${window.location.origin}/sala/${roomCode}`);
-        }
-        const salaRef = ref(db, `salas/${roomCode}/fila`);
-        return onValue(salaRef, (snapshot) => {
-            const data = snapshot.val();
-            const lista = data ? Object.entries(data).map(([id, val]) => ({ id, ...val })) : [];
-
-            // Força o cantor atual a ficar sempre na primeira posição
-            setFila(lista
-                .filter(i => i.status === "aguardando" || i.status === "iniciado")
-                .sort((a, b) => {
-                    if (a.status === "iniciado") return -1;
-                    if (b.status === "iniciado") return 1;
-                    return a.timestamp - b.timestamp;
-                })
-            );
-
-            setHistorico(lista.filter(i => i.status === "finalizado" || i.status === "cancelado").sort((a, b) => b.timestamp - a.timestamp));
-        });
-    }, [roomCode]);
-
     const criarSala = async (codigoFornecido) => {
         if (userRooms.length >= 3) {
             alert("Atenção: Atingiste o limite máximo de 3 salas ativas!");
@@ -113,8 +91,9 @@ export default function Admin() {
             codigoFinal = Math.random().toString(36).substring(2, 8).toUpperCase();
         }
 
-        if (codigoFinal.length > 6) {
-            alert("O código da sala deve ter no máximo 6 caracteres.");
+
+        if (codigoFinal.length < 3 || codigoFinal.length > 6) {
+            alert("O código da sala deve ter entre 3 e 6 caracteres.");
             return;
         }
 
@@ -131,11 +110,6 @@ export default function Admin() {
     };
 
     const deslogar = () => signOut(auth).then(() => navigate("/login"));
-
-    const atualizarStatus = (id, novoStatus) => {
-        if (!roomCode) return;
-        update(ref(db, `salas/${roomCode}/fila/${id}`), { status: novoStatus });
-    };
 
     const darPlayNoDisplay = (videoId) => {
         if (!roomCode) return;
@@ -215,13 +189,9 @@ export default function Admin() {
         }
     };
 
-    // =========================================================
-    // LÓGICA DE RECORRÊNCIA E ARRASTAR E SOLTAR BLINDADAS
-    // =========================================================
     const verificarSeRecorrente = (nomeAtual) => {
         if (!nomeAtual) return false;
 
-        // Remove acentos, espaços extras e coloca tudo em minúsculo
         const normalizarNome = (nome) => {
             return nome
                 .toLowerCase()
@@ -231,7 +201,6 @@ export default function Admin() {
         };
 
         const nomeFormatado = normalizarNome(nomeAtual);
-
         const naFila = fila.filter(p => p.nome && normalizarNome(p.nome) === nomeFormatado).length;
         const noHistorico = historico.filter(p => p.nome && normalizarNome(p.nome) === nomeFormatado).length;
 
@@ -242,7 +211,6 @@ export default function Admin() {
         e.preventDefault();
         if (dragIndex === null || dragIndex === dropIndex) return;
 
-        // Bloqueia se tentar arrastar o que está a cantar ou soltar em cima dele
         if (fila[dragIndex].status === "iniciado" || fila[dropIndex].status === "iniciado") {
             setDragIndex(null);
             return;
@@ -271,12 +239,11 @@ export default function Admin() {
         setDragIndex(null);
 
         try {
-            await update(ref(db, `salas/${roomCode}/fila/${itemArrastado.id}`), { timestamp: novoTimestamp });
+            await atualizarTimestamp(itemArrastado.id, novoTimestamp);
         } catch (error) {
             console.error("Erro ao reordenar:", error);
         }
     };
-    // =========================================================
 
     if (carregando) return <div className="text-white text-center mt-5">A preparar os teus discos...</div>;
 
@@ -307,7 +274,7 @@ export default function Admin() {
                         ))}
                     </div>
                     {userRooms.length < 3 && (
-                        <div className="admin-glass-panel p-4 text-center create-room-section mx-auto" style={{ maxWidth: '600px' }}>
+                        <div className="admin-glass-panel p-4 text-center create-room-section mx-auto">
                             <span className="label-header text-neon-pink mb-3 d-block">CRIAR NOVA SALA</span>
                             <div className="d-flex flex-column flex-md-row gap-3 justify-content-center align-items-center">
                                 <input
@@ -392,6 +359,7 @@ export default function Admin() {
                                             return (
                                                 <div
                                                     key={item.id}
+                                                    className={`draggable-queue-item ${item.status === "iniciado" ? 'cantando' : ''} ${dragIndex === idx ? 'arrastando' : ''}`}
                                                     draggable={item.status !== "iniciado"}
                                                     onDragStart={(e) => {
                                                         if (item.status === "iniciado") {
@@ -403,11 +371,6 @@ export default function Admin() {
                                                     onDragOver={(e) => e.preventDefault()}
                                                     onDrop={(e) => aoSoltarCard(e, idx)}
                                                     onDragEnd={() => setDragIndex(null)}
-                                                    style={{
-                                                        cursor: item.status === "iniciado" ? 'default' : 'grab',
-                                                        opacity: dragIndex === idx ? 0.4 : 1,
-                                                        transition: 'opacity 0.2s ease-in-out'
-                                                    }}
                                                 >
                                                     <ItemFila
                                                         item={item}

@@ -1,65 +1,106 @@
 import { useState, useEffect } from 'react';
-import { ref, onValue, remove, update } from 'firebase/database';
-import { db } from '../firebase'; // Ajuste o caminho conforme o seu projeto
+import { ref, onValue, remove, update, push } from 'firebase/database';
+import { db } from '../firebase';
 
-export function useQueue() {
+export function useQueue(roomId) {
     const [fila, setFila] = useState([]);
+    const [historico, setHistorico] = useState([]);
 
-    // Escuta a fila em tempo real
+    // Escuta a fila da sala específica em tempo real
     useEffect(() => {
-        const filaRef = ref(db, 'fila');
+        if (!roomId) {
+            setFila([]);
+            setHistorico([]);
+            return;
+        }
+
+        const filaRef = ref(db, `salas/${roomId}/fila`);
         const unsubscribe = onValue(filaRef, (snapshot) => {
             const data = snapshot.val();
             if (data) {
-                // Converte o objeto do Firebase para um array e ordena pelo timestamp
-                const filaArray = Object.keys(data).map(key => ({
+                const listaGeral = Object.keys(data).map(key => ({
                     id: key,
                     ...data[key]
-                })).sort((a, b) => a.timestamp - b.timestamp);
+                }));
 
-                setFila(filaArray);
+                // Fila ativa (aguardando ou iniciado) ordenada
+                const filaAtiva = listaGeral
+                    .filter(i => i.status === "aguardando" || i.status === "iniciado")
+                    .sort((a, b) => {
+                        if (a.status === "iniciado") return -1;
+                        if (b.status === "iniciado") return 1;
+                        return a.timestamp - b.timestamp;
+                    });
+
+                // Histórico (finalizado ou cancelado) ordenado do mais recente para o mais antigo
+                const listaHistorico = listaGeral
+                    .filter(i => i.status === "finalizado" || i.status === "cancelado")
+                    .sort((a, b) => b.timestamp - a.timestamp);
+
+                setFila(filaAtiva);
+                setHistorico(listaHistorico);
             } else {
                 setFila([]);
+                setHistorico([]);
             }
         });
 
         return () => unsubscribe();
-    }, []);
+    }, [roomId]);
 
-    // Remove um pedido específico
-    const removerDaFila = async (idPedido) => {
+    // Adiciona um novo pedido à fila
+    const adicionarAFila = async (novoItem) => {
+        if (!roomId) return;
         try {
-            const pedidoRef = ref(db, `fila/${idPedido}`);
+            const filaRef = ref(db, `salas/${roomId}/fila`);
+            await push(filaRef, {
+                ...novoItem,
+                timestamp: Date.now()
+            });
+        } catch (error) {
+            console.error("Erro ao adicionar à fila:", error);
+        }
+    };
+
+    // Remove um pedido específico da sala
+    const removerDaFila = async (idPedido) => {
+        if (!roomId) return;
+        try {
+            const pedidoRef = ref(db, `salas/${roomId}/fila/${idPedido}`);
             await remove(pedidoRef);
         } catch (error) {
             console.error("Erro ao remover da fila:", error);
         }
     };
 
-    // Move a posição trocando o timestamp com o item vizinho
-    const moverPosicao = async (indexAtual, direcao) => {
+    // Atualiza o status de um pedido (ex: aguardando -> iniciado -> finalizado)
+    const atualizarStatus = async (idPedido, novoStatus) => {
+        if (!roomId) return;
         try {
-            const itemAtual = fila[indexAtual];
-            let itemDestino;
-
-            if (direcao === 'cima' && indexAtual > 0) {
-                itemDestino = fila[indexAtual - 1];
-            } else if (direcao === 'baixo' && indexAtual < fila.length - 1) {
-                itemDestino = fila[indexAtual + 1];
-            }
-
-            if (!itemDestino) return;
-
-            const atualRef = ref(db, `fila/${itemAtual.id}`);
-            const destinoRef = ref(db, `fila/${itemDestino.id}`);
-
-            // Inverte os timestamps para trocar a ordem
-            await update(atualRef, { timestamp: itemDestino.timestamp });
-            await update(destinoRef, { timestamp: itemAtual.timestamp });
+            const pedidoRef = ref(db, `salas/${roomId}/fila/${idPedido}`);
+            await update(pedidoRef, { status: novoStatus });
         } catch (error) {
-            console.error("Erro ao mover posição:", error);
+            console.error("Erro ao atualizar status:", error);
         }
     };
 
-    return { fila, removerDaFila, moverPosicao };
+    // Atualiza o timestamp para reordenação via Drag and Drop
+    const atualizarTimestamp = async (idPedido, novoTimestamp) => {
+        if (!roomId) return;
+        try {
+            const pedidoRef = ref(db, `salas/${roomId}/fila/${idPedido}`);
+            await update(pedidoRef, { timestamp: novoTimestamp });
+        } catch (error) {
+            console.error("Erro ao atualizar timestamp:", error);
+        }
+    };
+
+    return {
+        fila,
+        historico,
+        adicionarAFila,
+        removerDaFila,
+        atualizarStatus,
+        atualizarTimestamp
+    };
 }

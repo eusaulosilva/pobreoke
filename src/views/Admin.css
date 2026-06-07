@@ -302,7 +302,8 @@
         min-width: 130px;
     }
 
-    .admin-glass-panel {
+    /* O limitador de 550px apenas para os painéis dentro da sala do DJ */
+    .admin-main-row .admin-glass-panel {
         height: 550px;
         margin-bottom: 20px;
     }
@@ -440,35 +441,38 @@
     width: 100%;
 }
 
+.sala-card {
+    padding: 20px 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    height: 180px;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s;
+    border-top: 4px solid var(--neon-purple);
+}
+
 @media (min-width: 768px) {
     .salas-grid {
         grid-template-columns: repeat(3, 1fr);
         gap: 25px;
     }
-}
 
-.sala-card {
-    padding: 30px 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-between;
-    height: 250px;
-    cursor: pointer;
-    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s;
-    /* BORDA APENAS EM CIMA */
-    border-top: 4px solid var(--neon-purple);
+    .sala-card {
+        padding: 30px 20px;
+        height: 250px;
+    }
 }
 
 .sala-card:not(.sala-empty):hover {
     transform: translateY(-5px);
     box-shadow: 0 15px 35px rgba(168, 85, 247, 0.25);
-    /* MUDA A COR APENAS DA BORDA DE CIMA NO HOVER */
     border-top-color: var(--neon-pink);
 }
 
 .sala-codigo {
-    font-size: 2.2rem;
+    font-size: clamp(1.8rem, 5vw, 2.2rem);
     font-weight: 900;
     color: #fff;
     margin: auto 0;
@@ -477,7 +481,6 @@
 }
 
 .sala-empty {
-    /* BORDA EM CIMA MAS TRACEJADA PARA OS VAZIOS */
     border-top: 4px dashed rgba(255, 255, 255, 0.15);
     background: rgba(15, 23, 42, 0.3);
     cursor: default;
@@ -493,9 +496,11 @@
     border-top: none;
     border: 1px solid var(--border-color);
     background: rgba(30, 41, 59, 0.6);
+    max-width: 600px;
+    height: auto !important; /* CORREÇÃO AQUI */
+    padding: 20px !important;
 }
 
-/* Ajuste no mobile para o botão de sair não sobrepor o conteúdo */
 @media (max-width: 768px) {
     .salas-container {
         padding-top: 60px;
@@ -509,3 +514,18 @@
     }
 }
 
+/* =======================================================
+   REGRAS PARA DRAG AND DROP SEM INLINE STYLES
+======================================================= */
+.draggable-queue-item {
+    transition: opacity 0.2s ease-in-out;
+    cursor: grab;
+}
+
+.draggable-queue-item.arrastando {
+    opacity: 0.4;
+}
+
+.draggable-queue-item.cantando {
+    cursor: default;
+}
