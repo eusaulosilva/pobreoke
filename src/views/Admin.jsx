@@ -6,7 +6,7 @@ import "./Admin.css";
 import { useNavigate, useParams } from "react-router-dom";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { QRCodeCanvas } from "qrcode.react";
-import { Play, SkipForward, Power, LogOut, QrCode, Search, Square, Monitor, Link, List, Shuffle } from 'lucide-react';
+import { Play, SkipForward, Power, LogOut, QrCode, Search, Square, Monitor, Link, List, Shuffle, Lock, Unlock } from 'lucide-react';
 import ItemFila from "../components/ItemFIla";
 import { useQueue } from "../hooks/useQueue";
 
@@ -31,6 +31,9 @@ export default function Admin() {
     // Estado para o Drag and Drop
     const [dragIndex, setDragIndex] = useState(null);
 
+    // Estado para controlar se a fila está fechada
+    const [filaFechada, setFilaFechada] = useState(false);
+
     const qrRef = useRef();
     const navigate = useNavigate();
 
@@ -46,6 +49,16 @@ export default function Admin() {
             setRoomCode(null);
         }
     }, [roomId]);
+
+    // Escuta em tempo real o estado de abertura da fila
+    useEffect(() => {
+        if (!roomCode) return;
+        const configRef = ref(db, `salas/${roomCode}/configuracao/filaFechada`);
+        const unsubscribe = onValue(configRef, (snapshot) => {
+            setFilaFechada(snapshot.val() || false);
+        });
+        return () => unsubscribe();
+    }, [roomCode]);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -103,7 +116,7 @@ export default function Admin() {
         }
 
         update(ref(db, `admins/${user.uid}/salas`), { [codigoFinal]: true });
-        set(ref(db, `salas/${codigoFinal}/configuracao`), { adminId: user.uid, criadoEm: Date.now() });
+        set(ref(db, `salas/${codigoFinal}/configuracao`), { adminId: user.uid, criadoEm: Date.now(), filaFechada: false });
         navigate(`/admin/${codigoFinal}`);
         setCustomCode("");
     };
@@ -116,6 +129,14 @@ export default function Admin() {
             videoAtual: videoId,
             timestamp: Date.now()
         }).catch(err => console.error("Erro na TV:", err));
+    };
+
+    // Alterna o estado de abertura da fila no Firebase
+    const alternarFila = () => {
+        if (!roomCode) return;
+        update(ref(db, `salas/${roomCode}/configuracao`), {
+            filaFechada: !filaFechada
+        }).catch(err => console.error("Erro ao alternar status da fila:", err));
     };
 
     const realizarBusca = async (termoDeBusca) => {
@@ -340,7 +361,17 @@ export default function Admin() {
                                     <span className="text-white mx-3 opacity-50">|</span>
                                     <span className={`label-header cursor-pointer ${abaAtiva === 'historico' ? 'text-white' : 'opacity-50'}`} onClick={() => setAbaAtiva('historico')}>HISTÓRICO</span>
                                 </div>
-                                <button className="btn-reset-data-pourple d-flex align-items-center gap-2" onClick={encerrarNoite}><Power size={16} /> Encerrar</button>
+                                <div className="d-flex gap-2">
+                                    <button
+                                        className={`btn-action-${filaFechada ? 'cyan' : 'pink'} d-flex align-items-center gap-2`}
+                                        onClick={alternarFila}
+                                        title={filaFechada ? "Abrir fila para novos pedidos" : "Fechar fila para novos pedidos"}
+                                    >
+                                        {filaFechada ? <Unlock size={14} /> : <Lock size={14} />}
+                                        {filaFechada ? "ABRIR FILA" : "FECHAR FILA"}
+                                    </button>
+                                    <button className="btn-reset-data-pourple d-flex align-items-center gap-2" onClick={encerrarNoite}><Power size={16} /> Encerrar</button>
+                                </div>
                             </div>
                             <div className="panel-body-scroll">
                                 {abaAtiva === 'fila' ? (

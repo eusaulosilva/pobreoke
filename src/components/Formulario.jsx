@@ -1,4 +1,4 @@
-export default function Formulario({ nome, setNome, musica, setMusica, adicionarAFila, bloqueado }) {
+export default function Formulario({ nome, setNome, musica, setMusica, adicionarAFila, bloqueado, filaFechada }) {
     return (
         <div className="card shadow-lg">
             <h2>Quero Cantar</h2>
@@ -11,7 +11,7 @@ export default function Formulario({ nome, setNome, musica, setMusica, adicionar
                         value={nome}
                         onChange={(e) => setNome(e.target.value)}
                         required
-                        disabled={bloqueado}
+                        disabled={bloqueado || filaFechada}
                     />
                 </div>
                 <div className="input-group">
@@ -22,15 +22,15 @@ export default function Formulario({ nome, setNome, musica, setMusica, adicionar
                         value={musica}
                         onChange={(e) => setMusica(e.target.value)}
                         required
-                        disabled={bloqueado}
+                        disabled={bloqueado || filaFechada}
                     />
                 </div>
                 <button
                     type="submit"
                     className="btn-add w-100"
-                    disabled={bloqueado}
+                    disabled={bloqueado || filaFechada}
                 >
-                    {bloqueado ? "VOCÊ JÁ ESTÁ NA FILA" : "ENTRAR NA FILA"}
+                    {filaFechada ? "FILA FECHADA PELO DJ" : bloqueado ? "VOCÊ JÁ ESTÁ NA FILA" : "ENTRAR NA FILA"}
                 </button>
             </form>
         </div>

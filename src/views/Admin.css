@@ -172,6 +172,32 @@
     box-shadow: 0 0 12px var(--neon-purple);
 }
 
+/* Ajustes dos botões de alternância da fila dentro do painel */
+.panel-header .btn-action-cyan,
+.panel-header .btn-action-pink {
+    background: transparent;
+    padding: 5px 12px;
+    border-radius: 8px;
+    font-weight: 800;
+    font-size: 0.65rem;
+    cursor: pointer;
+    transition: 0.3s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: auto;
+}
+
+.panel-header .btn-action-cyan:hover {
+    box-shadow: 0 0 12px var(--neon-cyan);
+    background: rgba(34, 211, 238, 0.05);
+}
+
+.panel-header .btn-action-pink:hover {
+    box-shadow: 0 0 12px var(--neon-pink);
+    background: rgba(236, 72, 153, 0.05);
+}
+
 .btn-photo-purple-search {
     background: #3b2271;
     border: none;
@@ -497,7 +523,7 @@
     border: 1px solid var(--border-color);
     background: rgba(30, 41, 59, 0.6);
     max-width: 600px;
-    height: auto !important; /* CORREÇÃO AQUI */
+    height: auto !important;
     padding: 20px !important;
 }
 

@@ -14,7 +14,7 @@ export default function Pedido() {
     const navigate = useNavigate();
 
     const salaIdFormatado = roomId ? roomId.toUpperCase() : null;
-    
+
     const { fila, adicionarAFila: adicionarItemNaFila } = useQueue(salaIdFormatado);
 
     const [nome, setNome] = useState("");
@@ -24,6 +24,7 @@ export default function Pedido() {
     const [noPalco, setNoPalco] = useState(null);
     const [inputCodigo, setInputCodigo] = useState("");
     const [roomExists, setRoomExists] = useState(true);
+    const [filaFechada, setFilaFechada] = useState(false);
 
     const [modalConfig, setModalConfig] = useState({ visivel: false, titulo: "", texto: "" });
 
@@ -40,7 +41,12 @@ export default function Pedido() {
 
         const roomRef = ref(db, `salas/${salaIdFormatado}`);
         const unsubRoom = onValue(roomRef, (snapshot) => {
-            setRoomExists(snapshot.exists());
+            const exists = snapshot.exists();
+            setRoomExists(exists);
+            if (exists) {
+                const data = snapshot.val();
+                setFilaFechada(data?.configuracao?.filaFechada || false);
+            }
         });
 
         let savedUid = localStorage.getItem("pobreoke_uid");
@@ -49,12 +55,6 @@ export default function Pedido() {
             localStorage.setItem("pobreoke_uid", savedUid);
         }
         setUid(savedUid);
-
-        // const avisoVisto = sessionStorage.getItem("aviso_evidencias_visto");
-        // if (!avisoVisto) {
-        //     exibirModal("🎶 Dica Especial", "Não peças Evidências, pois ela será a música de encerramento do nosso karaokê!");
-        //     sessionStorage.setItem("aviso_evidencias_visto", "true");
-        // }
 
         return () => unsubRoom();
 
@@ -133,19 +133,15 @@ export default function Pedido() {
     const adicionarAFila = (e) => {
         e.preventDefault();
 
+        if (filaFechada) {
+            alert("A fila de pedidos está fechada no momento pelo DJ!");
+            return;
+        }
+
         if (bloqueado) {
             alert("Já estás na fila de espera! Canta a tua música antes de pedir outra.");
             return;
         }
-
-        const termoBusca = musica.toLowerCase();
-        const musicaLimpa = termoBusca.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
-        // if (musicaLimpa.includes("evidencia") || termoBusca.includes("chitao")) {
-        //     exibirModal("Música Bloqueada 🚫", "Não podes pedir Evidências, pois ela será a música de encerramento do karaokê!");
-        //     setMusica("");
-        //     return;
-        // }
 
         adicionarItemNaFila({
             uid,
@@ -196,6 +192,7 @@ export default function Pedido() {
                         setMusica={setMusica}
                         adicionarAFila={adicionarAFila}
                         bloqueado={bloqueado}
+                        filaFechada={filaFechada}
                     />
 
                     {posicaoNaFila > 0 && <StatusFila posicao={posicaoNaFila} />}
