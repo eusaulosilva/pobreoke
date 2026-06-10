@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { ref, onValue, remove, update, push } from 'firebase/database';
 import { db } from '../firebase';
+import { QUEUE_STATUS, FIREBASE_PATHS } from '../constants';
 
 export function useQueue(roomId) {
     const [fila, setFila] = useState([]);
     const [historico, setHistorico] = useState([]);
 
-    // Escuta a fila da sala específica em tempo real
     useEffect(() => {
         if (!roomId) {
             setFila([]);
@@ -14,7 +14,7 @@ export function useQueue(roomId) {
             return;
         }
 
-        const filaRef = ref(db, `salas/${roomId}/fila`);
+        const filaRef = ref(db, FIREBASE_PATHS.fila(roomId));
         const unsubscribe = onValue(filaRef, (snapshot) => {
             const data = snapshot.val();
             if (data) {
@@ -23,18 +23,16 @@ export function useQueue(roomId) {
                     ...data[key]
                 }));
 
-                // Fila ativa (aguardando ou iniciado) ordenada
                 const filaAtiva = listaGeral
-                    .filter(i => i.status === "aguardando" || i.status === "iniciado")
+                    .filter(i => i.status === QUEUE_STATUS.AGUARDANDO || i.status === QUEUE_STATUS.INICIADO)
                     .sort((a, b) => {
-                        if (a.status === "iniciado") return -1;
-                        if (b.status === "iniciado") return 1;
+                        if (a.status === QUEUE_STATUS.INICIADO) return -1;
+                        if (b.status === QUEUE_STATUS.INICIADO) return 1;
                         return a.timestamp - b.timestamp;
                     });
 
-                // Histórico (finalizado ou cancelado) ordenado do mais recente para o mais antigo
                 const listaHistorico = listaGeral
-                    .filter(i => i.status === "finalizado" || i.status === "cancelado")
+                    .filter(i => i.status === QUEUE_STATUS.FINALIZADO || i.status === QUEUE_STATUS.CANCELADO)
                     .sort((a, b) => b.timestamp - a.timestamp);
 
                 setFila(filaAtiva);
@@ -48,50 +46,54 @@ export function useQueue(roomId) {
         return () => unsubscribe();
     }, [roomId]);
 
-    // Adiciona um novo pedido à fila
     const adicionarAFila = async (novoItem) => {
-        if (!roomId) return;
+        if (!roomId) return { success: false, error: "Sala não definida" };
         try {
-            const filaRef = ref(db, `salas/${roomId}/fila`);
+            const filaRef = ref(db, FIREBASE_PATHS.fila(roomId));
             await push(filaRef, {
                 ...novoItem,
                 timestamp: Date.now()
             });
+            return { success: true };
         } catch (error) {
             console.error("Erro ao adicionar à fila:", error);
+            return { success: false, error };
         }
     };
 
-    // Remove um pedido específico da sala
     const removerDaFila = async (idPedido) => {
-        if (!roomId) return;
+        if (!roomId) return { success: false, error: "Sala não definida" };
         try {
-            const pedidoRef = ref(db, `salas/${roomId}/fila/${idPedido}`);
+            const pedidoRef = ref(db, FIREBASE_PATHS.filaItem(roomId, idPedido));
             await remove(pedidoRef);
+            return { success: true };
         } catch (error) {
             console.error("Erro ao remover da fila:", error);
+            return { success: false, error };
         }
     };
 
-    // Atualiza o status de um pedido (ex: aguardando -> iniciado -> finalizado)
     const atualizarStatus = async (idPedido, novoStatus) => {
-        if (!roomId) return;
+        if (!roomId) return { success: false, error: "Sala não definida" };
         try {
-            const pedidoRef = ref(db, `salas/${roomId}/fila/${idPedido}`);
+            const pedidoRef = ref(db, FIREBASE_PATHS.filaItem(roomId, idPedido));
             await update(pedidoRef, { status: novoStatus });
+            return { success: true };
         } catch (error) {
             console.error("Erro ao atualizar status:", error);
+            return { success: false, error };
         }
     };
 
-    // Atualiza o timestamp para reordenação via Drag and Drop
     const atualizarTimestamp = async (idPedido, novoTimestamp) => {
-        if (!roomId) return;
+        if (!roomId) return { success: false, error: "Sala não definida" };
         try {
-            const pedidoRef = ref(db, `salas/${roomId}/fila/${idPedido}`);
+            const pedidoRef = ref(db, FIREBASE_PATHS.filaItem(roomId, idPedido));
             await update(pedidoRef, { timestamp: novoTimestamp });
+            return { success: true };
         } catch (error) {
             console.error("Erro ao atualizar timestamp:", error);
+            return { success: false, error };
         }
     };
 

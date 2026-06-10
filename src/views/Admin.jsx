@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useReducer, useEffect, useRef, useCallback } from "react";
 import { auth, db } from "../firebase";
 import { ref, onValue, update, remove, set, get } from "firebase/database";
 import axios from "axios";
@@ -6,56 +6,49 @@ import "./Admin.css";
 import { useNavigate, useParams } from "react-router-dom";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { QRCodeCanvas } from "qrcode.react";
-import { Play, SkipForward, Power, LogOut, QrCode, Search, Square, Monitor, Link, List, Shuffle, Lock, Unlock } from 'lucide-react';
-import ItemFila from "../components/ItemFIla";
+import { Power, LogOut, QrCode, Search, Square, Monitor, Link, List, Shuffle, Lock, Unlock } from 'lucide-react';
+import ItemFila from "../components/ItemFila";
 import { useQueue } from "../hooks/useQueue";
+import { QUEUE_STATUS, FIREBASE_PATHS } from "../constants";
+import { useSalaId, validators } from "../utils";
 
 const YOUTUBE_API_KEY = import.meta.env.VITE_YOUTUBE_KEY;
 
+const initialState = {
+    artista: "", musica: "", videos: [], abaAtiva: "fila",
+    modalAberto: false, userRooms: [], customCode: "",
+    dragIndex: null, filaFechada: false, carregando: true,
+    alertaConfig: { visivel: false, texto: "" },
+    linkCopiado: false
+};
+
+function adminReducer(state, action) {
+    switch (action.type) {
+        case 'SET_BUSCA': return { ...state, artista: action.artista ?? state.artista, musica: action.musica ?? state.musica };
+        case 'SET_VIDEOS': return { ...state, videos: action.videos };
+        case 'SET_UI': return { ...state, ...action.payload };
+        case 'SET_ROOMS': return { ...state, userRooms: action.payload, carregando: false };
+        case 'RESET_BUSCA': return { ...state, artista: "", musica: "", videos: [] };
+        case 'SHOW_ALERT': return { ...state, alertaConfig: { visivel: true, texto: action.texto } };
+        case 'HIDE_ALERT': return { ...state, alertaConfig: { visivel: false, texto: "" } };
+        default: return state;
+    }
+}
+
 export default function Admin() {
     const { roomId } = useParams();
-    const [artista, setArtista] = useState("");
-    const [musica, setMusica] = useState("");
-    const [videos, setVideos] = useState([]);
-    const [user, setUser] = useState(null);
-    const [carregando, setCarregando] = useState(true);
-    const [abaAtiva, setAbaAtiva] = useState("fila");
-    const [modalAberto, setModalAberto] = useState(false);
-
-    // Gestão de Múltiplas Salas
-    const [roomCode, setRoomCode] = useState(null);
-    const [userRooms, setUserRooms] = useState([]);
-    const [customCode, setCustomCode] = useState("");
-    const [qrValue, setQrValue] = useState("");
-
-    // Estado para o Drag and Drop
-    const [dragIndex, setDragIndex] = useState(null);
-
-    // Estado para controlar se a fila está fechada
-    const [filaFechada, setFilaFechada] = useState(false);
-
-    const qrRef = useRef();
     const navigate = useNavigate();
+    const roomCode = useSalaId(roomId);
+    const qrRef = useRef();
 
-    // Integração com o hook unificado de gerenciamento de fila
+    const [state, dispatch] = useReducer(adminReducer, initialState);
     const { fila, historico, atualizarStatus, atualizarTimestamp } = useQueue(roomCode);
 
-    // Sincroniza o roomCode com o parâmetro do URL
-    useEffect(() => {
-        if (roomId) {
-            setRoomCode(roomId);
-            setQrValue(`${window.location.origin}/sala/${roomId}`);
-        } else {
-            setRoomCode(null);
-        }
-    }, [roomId]);
-
-    // Escuta em tempo real o estado de abertura da fila
     useEffect(() => {
         if (!roomCode) return;
-        const configRef = ref(db, `salas/${roomCode}/configuracao/filaFechada`);
+        const configRef = ref(db, FIREBASE_PATHS.filaFechada(roomCode));
         const unsubscribe = onValue(configRef, (snapshot) => {
-            setFilaFechada(snapshot.val() || false);
+            dispatch({ type: 'SET_UI', payload: { filaFechada: snapshot.val() || false } });
         });
         return () => unsubscribe();
     }, [roomCode]);
@@ -64,119 +57,120 @@ export default function Admin() {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
             if (!currentUser) {
                 navigate("/login", { replace: true });
-            } else {
-                setUser(currentUser);
-                const adminRef = ref(db, `admins/${currentUser.uid}`);
-                onValue(adminRef, (snapshot) => {
-                    const data = snapshot.val();
-                    if (snapshot.exists()) {
-                        if (data.salas) {
-                            setUserRooms(Object.keys(data.salas));
-                        } else if (data.activeRoom) {
-                            const oldRoom = data.activeRoom;
-                            update(ref(db, `admins/${currentUser.uid}`), {
-                                salas: { [oldRoom]: true },
-                                activeRoom: null
-                            });
-                            setUserRooms([oldRoom]);
-                        } else {
-                            setUserRooms([]);
-                        }
-                    } else {
-                        setUserRooms([]);
-                    }
-                    setCarregando(false);
-                });
+                return;
             }
+            const adminRef = ref(db, FIREBASE_PATHS.adminUser(currentUser.uid));
+            onValue(adminRef, (snapshot) => {
+                const data = snapshot.val();
+                if (snapshot.exists()) {
+                    if (data.salas) {
+                        dispatch({ type: 'SET_ROOMS', payload: Object.keys(data.salas) });
+                    } else if (data.activeRoom) {
+                        const oldRoom = data.activeRoom;
+                        update(ref(db, FIREBASE_PATHS.adminUser(currentUser.uid)), { salas: { [oldRoom]: true }, activeRoom: null });
+                        dispatch({ type: 'SET_ROOMS', payload: [oldRoom] });
+                    } else {
+                        dispatch({ type: 'SET_ROOMS', payload: [] });
+                    }
+                } else {
+                    dispatch({ type: 'SET_ROOMS', payload: [] });
+                }
+            });
         });
         return () => unsubscribe();
     }, [navigate]);
 
-    const criarSala = async (codigoFornecido) => {
-        if (userRooms.length >= 3) {
-            alert("Atenção: Atingiste o limite máximo de 3 salas ativas!");
+    const criarSala = useCallback(async (codigoFornecido) => {
+        if (state.userRooms.length >= 3) {
+            dispatch({ type: 'SHOW_ALERT', texto: "Atenção: Atingiste o limite máximo de 3 salas ativas!" });
             return;
         }
 
         let codigoFinal = codigoFornecido.trim().toUpperCase();
+        if (!codigoFinal) codigoFinal = Math.random().toString(36).substring(2, 8).toUpperCase();
 
-        if (!codigoFinal) {
-            codigoFinal = Math.random().toString(36).substring(2, 8).toUpperCase();
-        }
-
-        if (codigoFinal.length < 3 || codigoFinal.length > 6) {
-            alert("O código da sala deve ter entre 3 e 6 caracteres.");
+        if (!validators.validarCodigo(codigoFinal)) {
+            dispatch({ type: 'SHOW_ALERT', texto: "O código da sala deve ter entre 3 e 6 caracteres." });
             return;
         }
 
-        const salaCheck = await get(ref(db, `salas/${codigoFinal}`));
-        if (salaCheck.exists()) {
-            alert("Este código de sala já está em uso! Tente outro nome.");
-            return;
-        }
+        try {
+            const salaCheck = await get(ref(db, FIREBASE_PATHS.sala(codigoFinal)));
+            if (salaCheck.exists()) {
+                dispatch({ type: 'SHOW_ALERT', texto: "Este código de sala já está em uso! Tente outro nome." });
+                return;
+            }
 
-        update(ref(db, `admins/${user.uid}/salas`), { [codigoFinal]: true });
-        set(ref(db, `salas/${codigoFinal}/configuracao`), { adminId: user.uid, criadoEm: Date.now(), filaFechada: false });
-        navigate(`/admin/${codigoFinal}`);
-        setCustomCode("");
-    };
+            const uid = auth.currentUser.uid;
+            await update(ref(db, FIREBASE_PATHS.adminSalas(uid)), { [codigoFinal]: true });
+            await set(ref(db, FIREBASE_PATHS.configuracao(codigoFinal)), { adminId: uid, criadoEm: Date.now(), filaFechada: false });
+
+            navigate(`/admin/${codigoFinal}`);
+            dispatch({ type: 'SET_UI', payload: { customCode: "" } });
+        } catch (err) {
+            dispatch({ type: 'SHOW_ALERT', texto: "Erro ao comunicar com o servidor." });
+        }
+    }, [state.userRooms, navigate]);
 
     const deslogar = () => signOut(auth).then(() => navigate("/login"));
 
-    const darPlayNoDisplay = (videoId) => {
+    const alternarFila = useCallback(() => {
         if (!roomCode) return;
-        update(ref(db, `salas/${roomCode}/configuracao`), {
-            videoAtual: videoId,
-            timestamp: Date.now()
-        }).catch(err => console.error("Erro na TV:", err));
-    };
+        update(ref(db, FIREBASE_PATHS.configuracao(roomCode)), { filaFechada: !state.filaFechada })
+            .catch(err => console.error("Erro ao alternar status:", err));
+    }, [roomCode, state.filaFechada]);
 
-    // Alterna o estado de abertura da fila no Firebase
-    const alternarFila = () => {
-        if (!roomCode) return;
-        update(ref(db, `salas/${roomCode}/configuracao`), {
-            filaFechada: !filaFechada
-        }).catch(err => console.error("Erro ao alternar status da fila:", err));
-    };
-
-    const realizarBusca = async (termoDeBusca) => {
-        if (!termoDeBusca.trim()) return;
+    const realizarBusca = useCallback(async (termoDeBusca) => {
+        if (!validators.validarMusica(termoDeBusca)) return;
         try {
             const res = await axios.get(`https://www.googleapis.com/youtube/v3/search`, {
                 params: {
-                    part: "snippet",
-                    q: `${termoDeBusca} karaoke`,
-                    type: "video",
-                    videoEmbeddable: "true",
-                    maxResults: 10,
-                    key: YOUTUBE_API_KEY,
+                    part: "snippet", q: `${termoDeBusca} karaoke`, type: "video",
+                    videoEmbeddable: "true", maxResults: 10, key: YOUTUBE_API_KEY,
                 },
             });
-            setVideos(res.data.items);
+            dispatch({ type: 'SET_VIDEOS', videos: res.data.items });
         } catch (err) { console.error("Erro ao procurar:", err); }
-    };
+    }, []);
 
     const pesquisarYoutube = (e) => {
         if (e) e.preventDefault();
-        realizarBusca(`${artista} ${musica}`);
+        realizarBusca(`${state.artista} ${state.musica}`);
     };
 
-    const chamarProximo = (itemClicado) => {
-        const cantandoAgora = fila.find(item => item.status === "iniciado");
-        if (cantandoAgora) atualizarStatus(cantandoAgora.id, "finalizado");
-        atualizarStatus(itemClicado.id, "iniciado");
-        setArtista("");
-        setMusica(itemClicado.musica);
+    const chamarProximo = useCallback((itemClicado) => {
+        const cantandoAgora = fila.find(item => item.status === QUEUE_STATUS.INICIADO);
+        if (cantandoAgora) atualizarStatus(cantandoAgora.id, QUEUE_STATUS.FINALIZADO);
+        atualizarStatus(itemClicado.id, QUEUE_STATUS.INICIADO);
+
+        dispatch({ type: 'SET_BUSCA', artista: "", musica: itemClicado.musica });
         realizarBusca(`${itemClicado.musica}`);
-    };
+    }, [fila, atualizarStatus, realizarBusca]);
+
+    const removerItemDaFila = useCallback((idRemovido) => {
+        const itemSendoRemovido = fila.find(item => item.id === idRemovido);
+        atualizarStatus(idRemovido, QUEUE_STATUS.FINALIZADO);
+
+        if (itemSendoRemovido?.status === QUEUE_STATUS.INICIADO && roomCode) {
+            update(ref(db, FIREBASE_PATHS.configuracao(roomCode)), { videoAtual: null });
+            dispatch({ type: 'RESET_BUSCA' });
+        }
+    }, [fila, atualizarStatus, roomCode]);
+
+    const verificarSeRecorrente = useCallback((uidAtual) => {
+        if (!uidAtual) return false;
+        const naFila = fila.filter(p => p.uid === uidAtual).length;
+        const noHistorico = historico.filter(p => p.uid === uidAtual).length;
+        return (naFila + noHistorico) > 1;
+    }, [fila, historico]);
 
     const encerrarNoite = () => {
         if (!roomCode) return;
         if (window.confirm(`ENCERRAR NOITE? A sala ${roomCode} será apagada.`)) {
-            remove(ref(db, `salas/${roomCode}`));
-            remove(ref(db, `admins/${user.uid}/salas/${roomCode}`));
+            remove(ref(db, FIREBASE_PATHS.sala(roomCode)));
+            remove(ref(db, `admins/${auth.currentUser?.uid}/salas/${roomCode}`));
             navigate('/admin');
-            setVideos([]);
+            dispatch({ type: 'RESET_BUSCA' });
         }
     };
 
@@ -190,54 +184,42 @@ export default function Admin() {
     };
 
     const copiarLink = () => {
-        navigator.clipboard.writeText(qrValue);
-        alert("Link copiado com sucesso!");
+        const linkPedidos = `${window.location.origin}/sala/${roomCode}`;
+        navigator.clipboard.writeText(linkPedidos);
+
+        dispatch({ type: 'SET_UI', payload: { linkCopiado: true } });
+
+        setTimeout(() => {
+            dispatch({ type: 'SET_UI', payload: { linkCopiado: false } });
+        }, 3000);
     };
 
-    // Nova função: apenas remove/finaliza o item sem chamar o próximo automaticamente
-    const removerItemDaFila = (idRemovido) => {
-        const itemSendoRemovido = fila.find(item => item.id === idRemovido);
-
-        atualizarStatus(idRemovido, "finalizado");
-
-        // Só para a TV se a pessoa removida for quem estava a cantar
-        if (itemSendoRemovido && itemSendoRemovido.status === "iniciado") {
-            if (roomCode) {
-                update(ref(db, `salas/${roomCode}/configuracao`), { videoAtual: null });
-            }
-            setArtista("");
-            setMusica("");
-            setVideos([]);
-        }
-    };
-
-    const verificarSeRecorrente = (uidAtual) => {
-        if (!uidAtual) return false;
-
-        const naFila = fila.filter(p => p.uid === uidAtual).length;
-        const noHistorico = historico.filter(p => p.uid === uidAtual).length;
-
-        return (naFila + noHistorico) > 1;
+    const darPlayNoDisplay = (videoId) => {
+        if (!roomCode) return;
+        update(ref(db, FIREBASE_PATHS.configuracao(roomCode)), {
+            videoAtual: videoId,
+            timestamp: Date.now()
+        }).catch(err => console.error("Erro na TV:", err));
     };
 
     const aoSoltarCard = async (e, dropIndex) => {
         e.preventDefault();
-        if (dragIndex === null || dragIndex === dropIndex) return;
+        if (state.dragIndex === null || state.dragIndex === dropIndex) return;
 
-        if (fila[dragIndex].status === "iniciado" || fila[dropIndex].status === "iniciado") {
-            setDragIndex(null);
+        if (fila[state.dragIndex].status === QUEUE_STATUS.INICIADO || fila[dropIndex].status === QUEUE_STATUS.INICIADO) {
+            dispatch({ type: 'SET_UI', payload: { dragIndex: null } });
             return;
         }
 
         const novaFila = [...fila];
-        const itemArrastado = novaFila.splice(dragIndex, 1)[0];
+        const itemArrastado = novaFila.splice(state.dragIndex, 1)[0];
         novaFila.splice(dropIndex, 0, itemArrastado);
 
         let novoTimestamp;
         const itemAnterior = novaFila[dropIndex - 1];
         const itemPosterior = novaFila[dropIndex + 1];
 
-        if (!itemAnterior || itemAnterior.status === "iniciado") {
+        if (!itemAnterior || itemAnterior.status === QUEUE_STATUS.INICIADO) {
             if (itemPosterior) {
                 novoTimestamp = itemPosterior.timestamp - 1000;
             } else {
@@ -249,68 +231,17 @@ export default function Admin() {
             novoTimestamp = (itemAnterior.timestamp + itemPosterior.timestamp) / 2;
         }
 
-        setDragIndex(null);
+        dispatch({ type: 'SET_UI', payload: { dragIndex: null } });
 
         try {
             await atualizarTimestamp(itemArrastado.id, novoTimestamp);
         } catch (error) {
             console.error("Erro ao reordenar:", error);
+            dispatch({ type: 'SHOW_ALERT', texto: "Erro ao reordenar a fila." });
         }
     };
 
-    if (carregando) return <div className="text-white text-center mt-5">A preparar os teus discos...</div>;
-
-    if (!roomCode) {
-        return (
-            <div className="admin-welcome-screen position-relative">
-                <button className="btn-logout-top-right" onClick={deslogar} title="Sair da Conta">
-                    <LogOut size={18} /> SAIR
-                </button>
-                <div className="salas-container w-100">
-                    <div className="text-center mb-5">
-                        <h2 className="welcome-title mb-2">GERENCIAR <span className="text-neon-pink">SALAS</span></h2>
-                        <p className="welcome-subtitle">Podes ter até 3 salas ativas a funcionar em simultâneo.</p>
-                    </div>
-                    <div className="salas-grid mb-4">
-                        {userRooms.map(sala => (
-                            <div key={sala} className="admin-glass-panel sala-card" onClick={() => navigate(`/admin/${sala}`)}>
-                                <span className="label-header text-neon-cyan mb-2">SALA ATIVA</span>
-                                <h3 className="sala-codigo">{sala}</h3>
-                                <button className="btn-photo-purple-search w-100 mt-auto">ENTRAR NA SALA</button>
-                            </div>
-                        ))}
-                        {userRooms.length < 3 && [...Array(3 - userRooms.length)].map((_, i) => (
-                            <div key={`empty-${i}`} className="admin-glass-panel sala-card sala-empty d-flex justify-content-center align-items-center">
-                                <span className="label-header mb-2 opacity-50">ESPAÇO DISPONÍVEL</span>
-                                <span className="opacity-25 mt-2">Vazio</span>
-                            </div>
-                        ))}
-                    </div>
-                    {userRooms.length < 3 && (
-                        <div className="admin-glass-panel p-4 text-center create-room-section mx-auto">
-                            <span className="label-header text-neon-pink mb-3 d-block">CRIAR NOVA SALA</span>
-                            <div className="d-flex flex-column flex-md-row gap-3 justify-content-center align-items-center">
-                                <input
-                                    type="text"
-                                    placeholder="Código Personalizado (opcional)"
-                                    maxLength={6}
-                                    value={customCode}
-                                    onChange={(e) => setCustomCode(e.target.value.toUpperCase())}
-                                    className="photo-style-input text-center flex-grow-1"
-                                />
-                                <div className="d-flex gap-2 w-100 w-md-auto">
-                                    <button className="btn-photo-purple-search flex-grow-1 px-4" onClick={() => criarSala(customCode)}>CRIAR</button>
-                                    <button className="btn-reset-data-pourple flex-grow-1 px-4 d-flex justify-content-center align-items-center gap-2" onClick={() => criarSala("")} title="Gerar Aleatório">
-                                        <Shuffle size={16} /> ALEATÓRIO
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </div>
-        );
-    }
+    if (state.carregando) return <div className="text-white text-center mt-5">A preparar os teus discos...</div>;
 
     const linkPedidos = `${window.location.origin}/sala/${roomCode}`;
     const linkDisplay = `${window.location.origin}/display/${roomCode}`;
@@ -318,134 +249,178 @@ export default function Admin() {
 
     return (
         <div className="admin-page-container">
-            <div className="container-fluid d-flex flex-column h-100">
-                <header className="admin-header">
-                    <div className="header-title-zone">
-                        <h2 className="room-title">SALA: <span className="neon-text-cyan">{roomCode}</span></h2>
-                    </div>
-                    <div className="header-actions-zone">
-                        <button className="btn-action-cyan" onClick={() => navigate('/admin')}><List size={14} /> SALAS</button>
-                        <button className="btn-action-cyan" onClick={() => window.open(linkPedidos, '_blank')}><Link size={14} /> PEDIDOS</button>
-                        <button className="btn-action-pink" onClick={() => window.open(linkDisplay, '_blank')}><Monitor size={14} /> TV</button>
-                        <button className="btn-action-cyan" onClick={() => window.open(linkQR, '_blank')}><QrCode size={14} /> QR TV</button>
-                        <button className="btn-action-cyan" onClick={() => setModalAberto(true)}><QrCode size={16} /> QR</button>
-                        <button className="btn-action-red" onClick={deslogar}><LogOut size={16} /> SAIR</button>
-                    </div>
-                </header>
 
-                {modalAberto && (
-                    <div className="modal-overlay" onClick={() => setModalAberto(false)}>
-                        <div className="modal-content-neon" onClick={(e) => e.stopPropagation()}>
-                            <button className="modal-close" onClick={() => setModalAberto(false)}>&times;</button>
-                            <h3 className="text-white fw-bold mb-4">Acesso à Sala</h3>
-                            <div className="qr-section" ref={qrRef}>
-                                <div className="qr-wrapper bg-white p-3 rounded-4 mb-4 d-inline-block">
-                                    <QRCodeCanvas value={linkPedidos} size={200} level={"H"} />
-                                </div>
-                                <div className="copy-link-container mb-4">
-                                    <input type="text" className="photo-style-input text-center" value={linkPedidos} readOnly />
-                                    <button className="btn-copy-neon" onClick={copiarLink}>COPIAR LINK</button>
-                                </div>
-                                <button className="btn-photo-purple-search w-100 py-3 mt-2" onClick={downloadQRCode}>BAIXAR QR HD</button>
+            {state.alertaConfig.visivel && (
+                <div className="modal-overlay" onClick={() => dispatch({ type: 'HIDE_ALERT' })}>
+                    <div className="modal-content-neon text-center p-4" onClick={e => e.stopPropagation()}>
+                        <h4 className="text-white mb-3">Aviso</h4>
+                        <p className="text-white mb-4">{state.alertaConfig.texto}</p>
+                        <button className="btn-photo-purple-search w-100" onClick={() => dispatch({ type: 'HIDE_ALERT' })}>OK</button>
+                    </div>
+                </div>
+            )}
+
+            {state.modalAberto && (
+                <div className="modal-overlay" onClick={() => dispatch({ type: 'SET_UI', payload: { modalAberto: false } })}>
+                    <div className="modal-content-neon" onClick={(e) => e.stopPropagation()}>
+                        <button className="modal-close" onClick={() => dispatch({ type: 'SET_UI', payload: { modalAberto: false } })}>&times;</button>
+                        <h3 className="text-white fw-bold mb-4">Acesso à Sala</h3>
+                        <div className="qr-section" ref={qrRef}>
+                            <div className="qr-wrapper bg-white p-3 rounded-4 mb-4 d-inline-block">
+                                <QRCodeCanvas value={linkPedidos} size={200} level={"H"} />
                             </div>
-                        </div>
-                    </div>
-                )}
-
-                <div className="row g-4 flex-grow-1 admin-main-row">
-                    <div className="col-lg-6 col-12 d-flex flex-column">
-                        <div className="admin-glass-panel">
-                            <div className="panel-header d-flex justify-content-between align-items-center">
-                                <div>
-                                    <span className={`label-header cursor-pointer ${abaAtiva === 'fila' ? 'text-white' : 'opacity-50'}`} onClick={() => setAbaAtiva('fila')}>FILA</span>
-                                    <span className="text-white mx-3 opacity-50">|</span>
-                                    <span className={`label-header cursor-pointer ${abaAtiva === 'historico' ? 'text-white' : 'opacity-50'}`} onClick={() => setAbaAtiva('historico')}>HISTÓRICO</span>
-                                </div>
-                                <div className="d-flex gap-2">
-                                    <button
-                                        className={`btn-action-${filaFechada ? 'cyan' : 'pink'} d-flex align-items-center gap-2`}
-                                        onClick={alternarFila}
-                                        title={filaFechada ? "Abrir fila para novos pedidos" : "Fechar fila para novos pedidos"}
-                                    >
-                                        {filaFechada ? <Unlock size={14} /> : <Lock size={14} />}
-                                        {filaFechada ? "ABRIR FILA" : "FECHAR FILA"}
-                                    </button>
-                                    <button className="btn-reset-data-pourple d-flex align-items-center gap-2" onClick={encerrarNoite}><Power size={16} /> Encerrar</button>
-                                </div>
-                            </div>
-                            <div className="panel-body-scroll">
-                                {abaAtiva === 'fila' ? (
-                                    fila.length === 0 ? <p className="text-white text-center mt-4">Fila vazia.</p> :
-                                        fila.map((item, idx) => {
-                                            const isRecorrente = verificarSeRecorrente(item.uid);
-
-                                            return (
-                                                <div
-                                                    key={item.id}
-                                                    className={`draggable-queue-item ${item.status === "iniciado" ? 'cantando' : ''} ${dragIndex === idx ? 'arrastando' : ''}`}
-                                                    draggable={item.status !== "iniciado"}
-                                                    onDragStart={(e) => {
-                                                        if (item.status === "iniciado") {
-                                                            e.preventDefault();
-                                                            return;
-                                                        }
-                                                        setDragIndex(idx);
-                                                    }}
-                                                    onDragOver={(e) => e.preventDefault()}
-                                                    onDrop={(e) => aoSoltarCard(e, idx)}
-                                                    onDragEnd={() => setDragIndex(null)}
-                                                >
-                                                    <ItemFila
-                                                        item={item}
-                                                        index={idx}
-                                                        chamarParaPalco={chamarProximo}
-                                                        removerDaFila={removerItemDaFila}
-                                                        isRecorrente={isRecorrente}
-                                                    />
-                                                </div>
-                                            );
-                                        })
-                                ) : (
-                                    historico.map(item => (
-                                        <div key={item.id} className="admin-neon-card mb-3 opacity-50">
-                                            <div className="card-content">
-                                                <h4 className="singer-title">{item.nome}</h4>
-                                                <p className="song-subtitle">{item.musica}</p>
-                                            </div>
-                                            <span className="text-white small fw-bold">FINALIZADO</span>
-                                        </div>
-                                    ))
+                            <div className="copy-link-container mb-4 text-center">
+                                <input type="text" className="photo-style-input text-center" value={linkPedidos} readOnly />
+                                <button className="btn-copy-neon w-100" onClick={copiarLink}>COPIAR LINK</button>
+                                {state.linkCopiado && (
+                                    <p className="text-success fw-bold mt-2 mb-0" style={{ fontSize: '0.9rem', animation: 'fadeIn 0.3s ease-in-out' }}>
+                                        ✓ Link copiado com sucesso!
+                                    </p>
                                 )}
                             </div>
+                            <button className="btn-photo-purple-search w-100 py-3 mt-2" onClick={downloadQRCode}>BAIXAR QR HD</button>
                         </div>
                     </div>
+                </div>
+            )}
 
-                    <div className="col-lg-6 col-12 d-flex flex-column">
-                        <div className="admin-glass-panel bg-dark-panel">
-                            <div className="panel-header d-flex justify-content-between align-items-center">
-                                <span className="label-header text-purple">BUSCAR KARAOKÊ</span>
-                                <button className="btn-reset-data-red d-flex align-items-center gap-2" onClick={() => update(ref(db, `salas/${roomCode}/configuracao`), { videoAtual: null })}><Square size={14} /> PARAR TV</button>
+            {!roomCode ? (
+                <div className="admin-welcome-screen position-relative">
+                    <button className="btn-logout-top-right" onClick={deslogar} title="Sair"><LogOut size={18} /> SAIR</button>
+                    <div className="salas-container w-100">
+                        <div className="text-center mb-5"><h2 className="welcome-title mb-2">GERENCIAR <span className="text-neon-pink">SALAS</span></h2></div>
+                        <div className="salas-grid mb-4">
+                            {state.userRooms.map(sala => (
+                                <div key={sala} className="admin-glass-panel sala-card" onClick={() => navigate(`/admin/${sala}`)}>
+                                    <span className="label-header text-neon-cyan mb-2">SALA ATIVA</span>
+                                    <h3 className="sala-codigo">{sala}</h3>
+                                    <button className="btn-photo-purple-search w-100 mt-auto">ENTRAR</button>
+                                </div>
+                            ))}
+                            {state.userRooms.length < 3 && [...Array(3 - state.userRooms.length)].map((_, i) => (
+                                <div key={`empty-${i}`} className="admin-glass-panel sala-card sala-empty d-flex justify-content-center align-items-center">
+                                    <span className="label-header mb-2 opacity-50">ESPAÇO DISPONÍVEL</span>
+                                    <span className="opacity-25 mt-2">Vazio</span>
+                                </div>
+                            ))}
+                        </div>
+                        {state.userRooms.length < 3 && (
+                            <div className="admin-glass-panel p-4 text-center create-room-section mx-auto">
+                                <span className="label-header text-neon-pink mb-3 d-block">CRIAR NOVA SALA</span>
+                                <div className="d-flex flex-column flex-md-row gap-3">
+                                    <input type="text" placeholder="Código Personalizado" maxLength={6} value={state.customCode} onChange={(e) => dispatch({ type: 'SET_UI', payload: { customCode: e.target.value.toUpperCase() } })} className="photo-style-input text-center flex-grow-1" />
+                                    <button className="btn-photo-purple-search px-4" onClick={() => criarSala(state.customCode)}>CRIAR</button>
+                                    <button className="btn-reset-data-pourple flex-grow-1 px-4 d-flex justify-content-center align-items-center gap-2" onClick={() => criarSala("")} title="Gerar Aleatório">
+                                        <Shuffle size={16} /> ALEATÓRIO
+                                    </button>
+                                </div>
                             </div>
-                            <div className="panel-body-scroll">
-                                <form onSubmit={pesquisarYoutube} className="mb-4">
-                                    <input className="photo-style-input mb-3" placeholder="Artista" value={artista} onChange={(e) => setArtista(e.target.value)} />
-                                    <input className="photo-style-input mb-3" placeholder="Música" value={musica} onChange={(e) => setMusica(e.target.value)} />
-                                    <button className="btn-photo-purple-search w-100 d-flex align-items-center justify-content-center gap-2"><Search size={18} /> BUSCAR</button>
-                                </form>
-                                {videos.map(v => (
-                                    <div key={v.id.videoId} className="yt-video-row" onClick={() => darPlayNoDisplay(v.id.videoId)}>
-                                        <img src={v.snippet.thumbnails.default.url} alt="thumb" />
-                                        <div className="ms-3">
-                                            <p className="yt-video-title m-0">{v.snippet.title}</p>
-                                            <small className="text-info small">ENVIAR À TV</small>
-                                        </div>
+                        )}
+                    </div>
+                </div>
+            ) : (
+                <div className="container-fluid d-flex flex-column h-100">
+                    <header className="admin-header">
+                        <div className="header-title-zone"><h2 className="room-title">SALA: <span className="neon-text-cyan">{roomCode}</span></h2></div>
+                        <div className="header-actions-zone">
+                            <button className="btn-action-cyan" onClick={() => navigate('/admin')}><List size={14} /> SALAS</button>
+                            <button className="btn-action-cyan" onClick={() => window.open(linkPedidos, '_blank')}><Link size={14} /> PEDIDOS</button>
+                            <button className="btn-action-pink" onClick={() => window.open(linkDisplay, '_blank')}><Monitor size={14} /> TV</button>
+                            <button className="btn-action-cyan" onClick={() => window.open(linkQR, '_blank')}><QrCode size={14} /> QR TV</button>
+                            <button className="btn-action-cyan" onClick={() => dispatch({ type: 'SET_UI', payload: { modalAberto: true } })}><QrCode size={16} /> QR</button>
+                            <button className="btn-action-red" onClick={deslogar}><LogOut size={16} /> SAIR</button>
+                        </div>
+                    </header>
+
+                    <div className="row g-4 flex-grow-1 admin-main-row">
+                        <div className="col-lg-6 col-12 d-flex flex-column">
+                            <div className="admin-glass-panel">
+                                <div className="panel-header d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span className={`label-header cursor-pointer ${state.abaAtiva === 'fila' ? 'text-white' : 'opacity-50'}`} onClick={() => dispatch({ type: 'SET_UI', payload: { abaAtiva: 'fila' } })}>FILA</span>
+                                        <span className="text-white mx-3 opacity-50">|</span>
+                                        <span className={`label-header cursor-pointer ${state.abaAtiva === 'historico' ? 'text-white' : 'opacity-50'}`} onClick={() => dispatch({ type: 'SET_UI', payload: { abaAtiva: 'historico' } })}>HISTÓRICO</span>
                                     </div>
-                                ))}
+                                    <div className="d-flex gap-2">
+                                        <button className={`btn-action-${state.filaFechada ? 'cyan' : 'pink'} d-flex align-items-center gap-2`} onClick={alternarFila}>
+                                            {state.filaFechada ? <Unlock size={14} /> : <Lock size={14} />} {state.filaFechada ? "ABRIR FILA" : "FECHAR FILA"}
+                                        </button>
+                                        <button className="btn-reset-data-pourple d-flex align-items-center gap-2" onClick={encerrarNoite}><Power size={16} /> Encerrar</button>
+                                    </div>
+                                </div>
+                                <div className="panel-body-scroll">
+                                    {state.abaAtiva === 'fila' ? (
+                                        fila.length === 0 ? <p className="text-white text-center mt-4">Fila vazia.</p> :
+                                            fila.map((item, idx) => {
+                                                const isRecorrente = verificarSeRecorrente(item.uid);
+                                                return (
+                                                    <div
+                                                        key={item.id}
+                                                        className={`draggable-queue-item ${item.status === QUEUE_STATUS.INICIADO ? 'cantando' : ''} ${state.dragIndex === idx ? 'arrastando' : ''}`}
+                                                        draggable={item.status !== QUEUE_STATUS.INICIADO}
+                                                        onDragStart={(e) => {
+                                                            if (item.status === QUEUE_STATUS.INICIADO) {
+                                                                e.preventDefault();
+                                                                return;
+                                                            }
+                                                            dispatch({ type: 'SET_UI', payload: { dragIndex: idx } });
+                                                        }}
+                                                        onDragOver={(e) => e.preventDefault()}
+                                                        onDrop={(e) => aoSoltarCard(e, idx)}
+                                                        onDragEnd={() => dispatch({ type: 'SET_UI', payload: { dragIndex: null } })}
+                                                    >
+                                                        <ItemFila
+                                                            item={item}
+                                                            index={idx}
+                                                            chamarParaPalco={chamarProximo}
+                                                            removerDaFila={removerItemDaFila}
+                                                            isRecorrente={isRecorrente}
+                                                        />
+                                                    </div>
+                                                );
+                                            })
+                                    ) : (
+                                        historico.map(item => (
+                                            <div key={item.id} className="admin-neon-card mb-3 opacity-50">
+                                                <div className="card-content">
+                                                    <h4 className="singer-title">{item.nome}</h4>
+                                                    <p className="song-subtitle">{item.musica}</p>
+                                                </div>
+                                                <span className="text-white small fw-bold">FINALIZADO</span>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="col-lg-6 col-12 d-flex flex-column">
+                            <div className="admin-glass-panel bg-dark-panel">
+                                <div className="panel-header d-flex justify-content-between align-items-center">
+                                    <span className="label-header text-purple">BUSCAR KARAOKÊ</span>
+                                    <button className="btn-reset-data-red d-flex align-items-center gap-2" onClick={() => update(ref(db, FIREBASE_PATHS.configuracao(roomCode)), { videoAtual: null })}><Square size={14} /> PARAR TV</button>
+                                </div>
+                                <div className="panel-body-scroll">
+                                    <form onSubmit={pesquisarYoutube} className="mb-4">
+                                        <input className="photo-style-input mb-3" placeholder="Artista" value={state.artista} onChange={(e) => dispatch({ type: 'SET_BUSCA', artista: e.target.value })} />
+                                        <input className="photo-style-input mb-3" placeholder="Música" value={state.musica} onChange={(e) => dispatch({ type: 'SET_BUSCA', musica: e.target.value })} />
+                                        <button className="btn-photo-purple-search w-100 d-flex align-items-center justify-content-center gap-2"><Search size={18} /> BUSCAR</button>
+                                    </form>
+                                    {state.videos.map(v => (
+                                        <div key={v.id.videoId} className="yt-video-row" onClick={() => darPlayNoDisplay(v.id.videoId)}>
+                                            <img src={v.snippet.thumbnails.default.url} alt="thumb" />
+                                            <div className="ms-3">
+                                                <p className="yt-video-title m-0">{v.snippet.title}</p>
+                                                <small className="text-info small">ENVIAR À TV</small>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            )}
         </div>
     );
 }

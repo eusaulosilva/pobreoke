@@ -3,14 +3,15 @@ import { db } from "../firebase";
 import { ref, onValue } from "firebase/database";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQueue } from "../hooks/useQueue";
+import { FIREBASE_PATHS, QUEUE_STATUS } from "../constants";
+import { useSalaId } from "../utils";
 import "./Display.css";
 
 export default function Display() {
     const { roomId } = useParams();
     const navigate = useNavigate();
 
-    const salaIdFormatado = roomId ? roomId.toUpperCase() : null;
-
+    const salaIdFormatado = useSalaId(roomId);
     const { fila } = useQueue(salaIdFormatado);
 
     const [videoId, setVideoId] = useState(null);
@@ -25,7 +26,7 @@ export default function Display() {
             return;
         }
 
-        const roomRef = ref(db, `salas/${salaIdFormatado}`);
+        const roomRef = ref(db, FIREBASE_PATHS.sala(salaIdFormatado));
         const unsub = onValue(roomRef, (snapshot) => {
             setRoomExists(snapshot.exists());
             setCarregando(false);
@@ -37,7 +38,7 @@ export default function Display() {
     useEffect(() => {
         if (!salaIdFormatado || !roomExists) return;
 
-        const configRef = ref(db, `salas/${salaIdFormatado}/configuracao`);
+        const configRef = ref(db, FIREBASE_PATHS.configuracao(salaIdFormatado));
         const unsubConfig = onValue(configRef, (snapshot) => {
             const data = snapshot.val();
             setVideoId(data?.videoAtual || null);
@@ -48,7 +49,7 @@ export default function Display() {
 
     useEffect(() => {
         if (fila && fila.length > 0) {
-            const cantando = fila.find(item => item.status === "iniciado");
+            const cantando = fila.find(item => item.status === QUEUE_STATUS.INICIADO);
             if (cantando) {
                 setNoPalco(cantando);
             } else {
@@ -106,7 +107,7 @@ export default function Display() {
                 <p className="letter-spacing-2 fw-bold">AGUARDANDO COMANDO DO DJ</p>
             </div>
             <div className="container-sala mt-4">
-                <p className="m-0">SALA: {roomId.toUpperCase()}</p>
+                <p className="m-0">SALA: {salaIdFormatado}</p>
             </div>
         </div>
     );

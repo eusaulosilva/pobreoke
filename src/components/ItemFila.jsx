@@ -1,6 +1,6 @@
 import React from 'react';
 import { Play, X } from 'lucide-react';
-import './ItemFIla.css';
+import './ItemFila.css';
 
 export default function ItemFila({ item, index, chamarParaPalco, removerDaFila, isRecorrente }) {
     const isCurrentlyPlaying = item.status === "iniciado";

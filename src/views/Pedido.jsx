@@ -7,14 +7,15 @@ import Formulario from "../components/Formulario";
 import ListaFila from "../components/ListaFila";
 import StatusFila from "../components/StatusFila";
 import { useQueue } from "../hooks/useQueue";
+import { useSalaId, secureStorage, validators } from "../utils";
+import { FIREBASE_PATHS, QUEUE_STATUS } from "../constants";
 import "./Pedido.css";
 
 export default function Pedido() {
     const { roomId } = useParams();
     const navigate = useNavigate();
 
-    const salaIdFormatado = roomId ? roomId.toUpperCase() : null;
-
+    const salaIdFormatado = useSalaId(roomId);
     const { fila, adicionarAFila: adicionarItemNaFila } = useQueue(salaIdFormatado);
 
     const [nome, setNome] = useState("");
@@ -37,9 +38,9 @@ export default function Pedido() {
     };
 
     useEffect(() => {
-        if (!roomId) return;
+        if (!salaIdFormatado) return;
 
-        const roomRef = ref(db, `salas/${salaIdFormatado}`);
+        const roomRef = ref(db, FIREBASE_PATHS.sala(salaIdFormatado));
         const unsubRoom = onValue(roomRef, (snapshot) => {
             const exists = snapshot.exists();
             setRoomExists(exists);
@@ -49,20 +50,20 @@ export default function Pedido() {
             }
         });
 
-        let savedUid = localStorage.getItem("pobreoke_uid");
+        let savedUid = secureStorage.get("uid");
         if (!savedUid) {
-            savedUid = "V-" + Math.random().toString(36).substr(2, 5).toUpperCase();
-            localStorage.setItem("pobreoke_uid", savedUid);
+            savedUid = "V-" + crypto.randomUUID().split('-')[0].substring(0, 5).toUpperCase();
+            secureStorage.set("uid", savedUid);
         }
         setUid(savedUid);
 
         return () => unsubRoom();
 
-    }, [roomId, salaIdFormatado]);
+    }, [salaIdFormatado]);
 
     useEffect(() => {
         if (fila && fila.length > 0) {
-            const cantando = fila.find(item => item.status === "iniciado");
+            const cantando = fila.find(item => item.status === QUEUE_STATUS.INICIADO);
             if (cantando) {
                 setNoPalco({ nome: cantando.nome, musica: cantando.musica });
             } else {
@@ -73,16 +74,13 @@ export default function Pedido() {
         }
     }, [fila]);
 
-    if (!roomExists && roomId) {
+    if (!roomExists && salaIdFormatado) {
         return (
             <div className="status-screen-container px-3">
                 <h1 className="status-neon-red ">SALA ENCERRADA</h1>
                 <div className="status-card">
                     <p>Esta sala não existe ou foi finalizada pelo DJ. Que tal começar uma nova?</p>
-                    <button
-                        className="btn-status-action"
-                        onClick={() => navigate("/sala")}
-                    >
+                    <button className="btn-status-action" onClick={() => navigate("/sala")}>
                         VOLTAR AO INÍCIO
                     </button>
                 </div>
@@ -92,12 +90,14 @@ export default function Pedido() {
 
     const handleAcederSala = (e) => {
         e.preventDefault();
-        if (inputCodigo.trim()) {
+        if (validators.validarCodigo(inputCodigo)) {
             navigate(`/sala/${inputCodigo.trim().toUpperCase()}`);
+        } else {
+            exibirModal("Erro de Código", "O código da sala deve ter entre 3 e 6 caracteres.");
         }
     };
 
-    if (!roomId) {
+    if (!salaIdFormatado) {
         return (
             <div className="status-screen-container px-3">
                 <h1 className="status-neon-cyan">POBREOKÊ</h1>
@@ -126,51 +126,50 @@ export default function Pedido() {
         );
     }
 
-    const bloqueado = fila.some(item => item.uid === uid && (item.status === "aguardando" || item.status === "iniciado"));
+    const bloqueado = fila.some(item => item.uid === uid && (item.status === QUEUE_STATUS.AGUARDANDO || item.status === QUEUE_STATUS.INICIADO));
+    const posicaoNaFila = fila.filter(item => item.status === QUEUE_STATUS.AGUARDANDO || item.status === QUEUE_STATUS.INICIADO).findIndex(item => item.uid === uid) + 1;
 
-    const posicaoNaFila = fila.filter(item => item.status === "aguardando" || item.status === "iniciado").findIndex(item => item.uid === uid) + 1;
-
-    const adicionarAFila = (e) => {
+    const adicionarAFila = async (e) => {
         e.preventDefault();
 
+        if (!validators.validarNome(nome) || !validators.validarMusica(musica)) {
+            exibirModal("Aviso", "Por favor, preenche o teu nome e a música antes de pedir.");
+            return;
+        }
+
         if (filaFechada) {
-            alert("A fila de pedidos está fechada no momento pelo DJ!");
+            exibirModal("Fila Fechada", "A fila de pedidos está fechada no momento pelo DJ!");
             return;
         }
 
         if (bloqueado) {
-            alert("Já estás na fila de espera! Canta a tua música antes de pedir outra.");
+            exibirModal("Ação bloqueada", "Já estás na fila de espera! Canta a tua música antes de pedir outra.");
             return;
         }
 
-        adicionarItemNaFila({
+        const { success } = await adicionarItemNaFila({
             uid,
-            nome,
-            musica,
-            status: "aguardando"
+            nome: nome.trim(),
+            musica: musica.trim(),
+            status: QUEUE_STATUS.AGUARDANDO
         });
 
-        setMusica("");
+        if (success) {
+            setMusica("");
+        } else {
+            exibirModal("Erro", "Falha ao enviar pedido. Tenta novamente.");
+        }
     };
 
     return (
         <div className="pedido-bg-black position-relative min-vh-100">
 
             {modalConfig.visivel && (
-                <div
-                    className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center modal-overlay-custom"
-                    onClick={fecharModal}
-                >
-                    <div
-                        className="p-4 text-center d-flex flex-column align-items-center modal-content-custom"
-                        onClick={(e) => e.stopPropagation()}
-                    >
+                <div className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center modal-overlay-custom" onClick={fecharModal}>
+                    <div className="p-4 text-center d-flex flex-column align-items-center modal-content-custom" onClick={(e) => e.stopPropagation()}>
                         <h4 className="fw-bold mb-3 modal-title-custom">{modalConfig.titulo}</h4>
                         <p className="text-white mb-4 modal-text-custom">{modalConfig.texto}</p>
-                        <button
-                            className="w-100 py-3 fw-bold border-0 modal-btn-custom"
-                            onClick={fecharModal}
-                        >
+                        <button className="w-100 py-3 fw-bold border-0 modal-btn-custom" onClick={fecharModal}>
                             OK, ENTENDI
                         </button>
                     </div>
