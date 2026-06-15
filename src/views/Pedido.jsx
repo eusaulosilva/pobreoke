@@ -27,6 +27,9 @@ export default function Pedido() {
     const [roomExists, setRoomExists] = useState(true);
     const [filaFechada, setFilaFechada] = useState(false);
 
+    const [latSala, setLatSala] = useState(null);
+    const [lngSala, setLngSala] = useState(null);
+
     const [modalConfig, setModalConfig] = useState({ visivel: false, titulo: "", texto: "" });
 
     const exibirModal = (titulo, texto) => {
@@ -47,6 +50,8 @@ export default function Pedido() {
             if (exists) {
                 const data = snapshot.val();
                 setFilaFechada(data?.configuracao?.filaFechada || false);
+                setLatSala(data?.configuracao?.latSala || null);
+                setLngSala(data?.configuracao?.lngSala || null);
             }
         });
 
@@ -192,6 +197,8 @@ export default function Pedido() {
                         adicionarAFila={adicionarAFila}
                         bloqueado={bloqueado}
                         filaFechada={filaFechada}
+                        latSala={latSala}
+                        lngSala={lngSala}
                     />
 
                     {posicaoNaFila > 0 && <StatusFila posicao={posicaoNaFila} />}

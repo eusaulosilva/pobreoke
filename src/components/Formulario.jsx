@@ -1,13 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 export default function Formulario({
     nome, setNome, musica, setMusica, adicionarAFila,
     bloqueado, filaFechada, latSala, lngSala
 }) {
-    const [verificando, setVerificando] = useState(false);
+    const [statusLocalizacao, setStatusLocalizacao] = useState("verificando");
     const [erroGeo, setErroGeo] = useState("");
 
-    const RAIO_MAXIMO_METROS = 300;
+    const RAIO_MAXIMO_METROS = 250;
 
     const calcularDistancia = (lat1, lon1, lat2, lon2) => {
         const R = 6371e3;
@@ -21,16 +21,11 @@ export default function Formulario({
         return R * c;
     };
 
-    const handleSubmitComLocalizacao = (e) => {
-        e.preventDefault();
-        setErroGeo("");
-
+    useEffect(() => {
         if (!latSala || !lngSala) {
-            setErroGeo("A localização da sala não foi definida pelo DJ.");
+            setStatusLocalizacao("verificando");
             return;
         }
-
-        setVerificando(true);
 
         if ("geolocation" in navigator) {
             navigator.geolocation.getCurrentPosition(
@@ -39,28 +34,36 @@ export default function Formulario({
                     const distancia = calcularDistancia(latitude, longitude, latSala, lngSala);
 
                     if (distancia <= RAIO_MAXIMO_METROS) {
-                        adicionarAFila(e);
+                        setStatusLocalizacao("permitido");
+                        setErroGeo("");
                     } else {
+                        setStatusLocalizacao("bloqueado");
                         setErroGeo(`Você está muito longe (${Math.round(distancia)}m da sala). Vá até o local.`);
                     }
-                    setVerificando(false);
                 },
                 (error) => {
+                    setStatusLocalizacao("bloqueado");
                     setErroGeo("Permita o acesso à localização para pedir música.");
-                    setVerificando(false);
                 },
                 { enableHighAccuracy: true }
             );
         } else {
+            setStatusLocalizacao("bloqueado");
             setErroGeo("Geolocalização não suportada no seu dispositivo.");
-            setVerificando(false);
+        }
+    }, [latSala, lngSala]);
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (statusLocalizacao === "permitido") {
+            adicionarAFila(e);
         }
     };
 
     return (
         <div className="card shadow-lg">
             <h2>Quero Cantar</h2>
-            <form onSubmit={handleSubmitComLocalizacao}>
+            <form onSubmit={handleSubmit}>
                 <div className="input-group">
                     <label>Seu Nome</label>
                     <input
@@ -69,7 +72,7 @@ export default function Formulario({
                         value={nome}
                         onChange={(e) => setNome(e.target.value)}
                         required
-                        disabled={bloqueado || filaFechada || verificando}
+                        disabled={bloqueado || filaFechada || statusLocalizacao !== "permitido"}
                     />
                 </div>
                 <div className="input-group">
@@ -80,7 +83,7 @@ export default function Formulario({
                         value={musica}
                         onChange={(e) => setMusica(e.target.value)}
                         required
-                        disabled={bloqueado || filaFechada || verificando}
+                        disabled={bloqueado || filaFechada || statusLocalizacao !== "permitido"}
                     />
                 </div>
 
@@ -89,15 +92,17 @@ export default function Formulario({
                 <button
                     type="submit"
                     className="btn-add w-100"
-                    disabled={bloqueado || filaFechada || verificando}
+                    disabled={bloqueado || filaFechada || statusLocalizacao !== "permitido"}
                 >
-                    {verificando
-                        ? "VERIFICANDO LOCALIZAÇÃO..."
+                    {statusLocalizacao === "verificando"
+                        ? "OBTENDO LOCALIZAÇÃO..."
                         : filaFechada
                             ? "FILA FECHADA PELO DJ"
                             : bloqueado
                                 ? "VOCÊ JÁ ESTÁ NA FILA"
-                                : "ENTRAR NA FILA"
+                                : statusLocalizacao === "bloqueado"
+                                    ? "BLOQUEADO PELO GPS"
+                                    : "ENTRAR NA FILA"
                     }
                 </button>
             </form>

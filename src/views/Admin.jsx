@@ -101,12 +101,37 @@ export default function Admin() {
                 return;
             }
 
-            const uid = auth.currentUser.uid;
-            await update(ref(db, FIREBASE_PATHS.adminSalas(uid)), { [codigoFinal]: true });
-            await set(ref(db, FIREBASE_PATHS.configuracao(codigoFinal)), { adminId: uid, criadoEm: Date.now(), filaFechada: false });
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                    async (position) => {
+                        const { latitude, longitude } = position.coords;
+                        const uid = auth.currentUser.uid;
 
-            navigate(`/admin/${codigoFinal}`);
-            dispatch({ type: 'SET_UI', payload: { customCode: "" } });
+                        try {
+                            await update(ref(db, FIREBASE_PATHS.adminSalas(uid)), { [codigoFinal]: true });
+                            await set(ref(db, FIREBASE_PATHS.configuracao(codigoFinal)), {
+                                adminId: uid,
+                                criadoEm: Date.now(),
+                                filaFechada: false,
+                                latSala: latitude,
+                                lngSala: longitude
+                            });
+
+                            navigate(`/admin/${codigoFinal}`);
+                            dispatch({ type: 'SET_UI', payload: { customCode: "" } });
+                        } catch (err) {
+                            dispatch({ type: 'SHOW_ALERT', texto: "Erro ao comunicar com o servidor." });
+                        }
+                    },
+                    (error) => {
+                        dispatch({ type: 'SHOW_ALERT', texto: "Precisas de permitir o acesso à localização para criar a sala!" });
+                    },
+                    { enableHighAccuracy: true }
+                );
+            } else {
+                dispatch({ type: 'SHOW_ALERT', texto: "Geolocalização não é suportada neste navegador." });
+            }
+
         } catch (err) {
             dispatch({ type: 'SHOW_ALERT', texto: "Erro ao comunicar com o servidor." });
         }
