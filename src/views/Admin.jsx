@@ -6,7 +6,7 @@ import "./Admin.css";
 import { useNavigate, useParams } from "react-router-dom";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { QRCodeCanvas } from "qrcode.react";
-import { Power, LogOut, QrCode, Search, Square, Monitor, Link, List, Shuffle, Lock, Unlock } from 'lucide-react';
+import { Power, LogOut, QrCode, Search, Square, Monitor, Link, List, Shuffle, Lock, Unlock, Users } from 'lucide-react';
 import ItemFila from "../components/ItemFila";
 import { useQueue } from "../hooks/useQueue";
 import { QUEUE_STATUS, FIREBASE_PATHS } from "../constants";
@@ -19,7 +19,7 @@ const initialState = {
     modalAberto: false, userRooms: [], customCode: "",
     dragIndex: null, filaFechada: false, carregando: true,
     alertaConfig: { visivel: false, texto: "" },
-    linkCopiado: false
+    linkCopiado: false, isAdmin: false
 };
 
 function adminReducer(state, action) {
@@ -59,6 +59,16 @@ export default function Admin() {
                 navigate("/login", { replace: true });
                 return;
             }
+
+            // Verifica as permissões de super admin
+            const userNodeRef = ref(db, `usuarios/${currentUser.uid}`);
+            get(userNodeRef).then((snap) => {
+                if (snap.exists()) {
+                    dispatch({ type: 'SET_UI', payload: { isAdmin: snap.val().isAdmin === true } });
+                }
+            });
+
+            // Carrega as salas do utilizador
             const adminRef = ref(db, FIREBASE_PATHS.adminUser(currentUser.uid));
             onValue(adminRef, (snapshot) => {
                 const data = snapshot.val();
@@ -286,9 +296,23 @@ export default function Admin() {
 
             {!roomCode ? (
                 <div className="admin-welcome-screen position-relative">
-                    <button className="btn-logout-top-right" onClick={deslogar} title="Sair"><LogOut size={18} /> SAIR</button>
+
+                    <div className="top-right-actions">
+                        {/* BOTÃO AGORA SÓ APARECE SE FOR ADMIN */}
+                        {state.isAdmin && (
+                            <button className="btn-manage-top" onClick={() => navigate('/admin/usuarios')} title="Gerenciar Acessos">
+                                <Users size={18} /> <span>ACESSOS</span>
+                            </button>
+                        )}
+                        <button className="btn-logout-top" onClick={deslogar} title="Sair">
+                            <LogOut size={18} /> <span>SAIR</span>
+                        </button>
+                    </div>
+
                     <div className="salas-container w-100">
-                        <div className="text-center mb-5"><h2 className="welcome-title mb-2">GERENCIAR <span className="text-neon-pink">SALAS</span></h2></div>
+                        <div className="text-center mb-5">
+                            <h2 className="welcome-title mb-2">GERENCIAR <span className="text-neon-pink">SALAS</span></h2>
+                        </div>
                         <div className="salas-grid mb-4">
                             {state.userRooms.map(sala => (
                                 <div key={sala} className="admin-glass-panel sala-card" onClick={() => navigate(`/admin/${sala}`)}>
@@ -323,6 +347,10 @@ export default function Admin() {
                     <header className="admin-header">
                         <div className="header-title-zone"><h2 className="room-title">SALA: <span className="neon-text-cyan">{roomCode}</span></h2></div>
                         <div className="header-actions-zone">
+                            {/* BOTÃO AGORA SÓ APARECE SE FOR ADMIN */}
+                            {state.isAdmin && (
+                                <button className="btn-action-cyan" onClick={() => navigate('/admin/usuarios')}><Users size={14} /> ACESSOS</button>
+                            )}
                             <button className="btn-action-cyan" onClick={() => navigate('/admin')}><List size={14} /> SALAS</button>
                             <button className="btn-action-cyan" onClick={() => window.open(linkPedidos, '_blank')}><Link size={14} /> PEDIDOS</button>
                             <button className="btn-action-pink" onClick={() => window.open(linkDisplay, '_blank')}><Monitor size={14} /> TV</button>

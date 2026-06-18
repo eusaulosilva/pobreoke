@@ -328,7 +328,6 @@
         min-width: 130px;
     }
 
-    /* O limitador de 550px apenas para os painéis dentro da sala do DJ */
     .admin-main-row .admin-glass-panel {
         height: 550px;
         margin-bottom: 20px;
@@ -347,14 +346,6 @@
 
 .label-header:hover {
     color: #fff;
-}
-
-.text-cyan {
-    color: var(--neon-cyan);
-}
-
-.text-purple {
-    color: var(--neon-purple);
 }
 
 .copy-link-container {
@@ -395,7 +386,6 @@
 
 /* --- TELA DE BOAS-VINDAS DO ADMIN (CRIAÇÃO DE SALA) --- */
 .admin-welcome-screen {
-    background: radial-gradient(circle at top, #0f172a 0%, var(--bg-dark) 100%);
     min-height: 100vh;
     width: 100%;
     display: flex;
@@ -405,11 +395,39 @@
     position: relative;
 }
 
-/* BOTÃO DE SAIR NO CANTO SUPERIOR DIREITO */
-.btn-logout-top-right {
+/* =======================================================
+   BOTÕES NO CANTO SUPERIOR DIREITO (SAIR E ACESSOS)
+======================================================= */
+.top-right-actions {
     position: absolute;
     top: 25px;
     right: 25px;
+    display: flex;
+    gap: 15px;
+    z-index: 10;
+}
+
+.btn-manage-top {
+    background: transparent;
+    border: 1px solid var(--neon-cyan);
+    color: var(--neon-cyan);
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-weight: 800;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-manage-top:hover {
+    background: rgba(34, 211, 238, 0.1);
+    box-shadow: 0 0 15px rgba(34, 211, 238, 0.4);
+}
+
+.btn-logout-top {
     background: transparent;
     border: 1px solid var(--neon-red);
     color: var(--neon-red);
@@ -422,10 +440,9 @@
     gap: 8px;
     cursor: pointer;
     transition: all 0.3s ease;
-    z-index: 10;
 }
 
-.btn-logout-top-right:hover {
+.btn-logout-top:hover {
     background: rgba(220, 38, 38, 0.1);
     box-shadow: 0 0 15px rgba(220, 38, 38, 0.4);
 }
@@ -436,11 +453,6 @@
     color: #fff;
     margin: 0;
     letter-spacing: 1px;
-}
-
-.welcome-subtitle {
-    color: #94a3b8;
-    font-size: clamp(0.9rem, 3vw, 1.1rem);
 }
 
 .text-neon-pink {
@@ -532,11 +544,22 @@
         padding-top: 60px;
     }
 
-    .btn-logout-top-right {
+    /* Responsividade para o container de botões e textos */
+    .top-right-actions {
         top: 15px;
         right: 15px;
+        gap: 10px;
+    }
+
+    .btn-manage-top,
+    .btn-logout-top {
         padding: 8px 12px;
         font-size: 0.75rem;
+    }
+
+    .btn-manage-top span,
+    .btn-logout-top span {
+        display: none;
     }
 }
 
