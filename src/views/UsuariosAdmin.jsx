@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { db } from "../firebase";
+import { db, auth } from "../firebase";
 import { ref, onValue, update } from "firebase/database";
 import { useNavigate } from "react-router-dom";
 import "./UsuariosAdmin.css";
@@ -7,19 +7,36 @@ import "./UsuariosAdmin.css";
 export default function UsuariosAdmin() {
     const [usuarios, setUsuarios] = useState([]);
     const [carregando, setCarregando] = useState(true);
+
+    // Estado do modal atualizado para suportar ações de confirmação
+    const [modalConfig, setModalConfig] = useState({ visivel: false, titulo: "", texto: "", onConfirm: null });
     const navigate = useNavigate();
 
-    useEffect(() => {
-        // Referência à lista de utilizadores no Firebase
-        const usuariosRef = ref(db, "usuarios");
+    const exibirModal = (titulo, texto, onConfirm = null) => {
+        setModalConfig({ visivel: true, titulo, texto, onConfirm });
+    };
 
+    const fecharModal = () => {
+        setModalConfig({ visivel: false, titulo: "", texto: "", onConfirm: null });
+    };
+
+    useEffect(() => {
+        const usuariosRef = ref(db, "usuarios");
         const unsubscribe = onValue(usuariosRef, (snapshot) => {
             const data = snapshot.val();
             if (data) {
-                const listaUsuarios = Object.keys(data).map((key) => ({
+                let listaUsuarios = Object.keys(data).map((key) => ({
                     id: key,
                     ...data[key],
                 }));
+
+                // Ordenar: Usuários com isAdmin === true ficam no topo
+                listaUsuarios.sort((a, b) => {
+                    if (a.isAdmin && !b.isAdmin) return -1;
+                    if (!a.isAdmin && b.isAdmin) return 1;
+                    return 0;
+                });
+
                 setUsuarios(listaUsuarios);
             } else {
                 setUsuarios([]);
@@ -30,15 +47,33 @@ export default function UsuariosAdmin() {
         return () => unsubscribe();
     }, []);
 
-    const alternarAcesso = async (id, statusAtual) => {
-        try {
-            const usuarioRef = ref(db, `usuarios/${id}`);
-            // Inverte o estado de acesso no banco de dados (true passa a false, e vice-versa)
-            await update(usuarioRef, { permitido: !statusAtual });
-        } catch (error) {
-            console.error("Erro ao atualizar o acesso do utilizador:", error);
-            alert("Ocorreu um erro ao atualizar o acesso. Verifica as tuas permissões.");
-        }
+    const alternarAcesso = (id, statusAtual) => {
+        const acao = statusAtual ? "revogar" : "permitir";
+
+        // Exibe o modal de confirmação antes de executar
+        exibirModal(
+            "Confirmar Ação",
+            `Tens a certeza que pretendes ${acao} o acesso deste utilizador?`,
+            async () => {
+                // Fecha o modal de confirmação imediatamente
+                fecharModal();
+
+                try {
+                    const usuarioRef = ref(db, `usuarios/${id}`);
+                    await update(usuarioRef, { permitido: !statusAtual });
+
+                    // Exibe o modal de sucesso (sem a função onConfirm)
+                    setTimeout(() => {
+                        exibirModal("Sucesso", `Acesso ${!statusAtual ? 'concedido' : 'revogado'} com sucesso!`);
+                    }, 300); // Pequeno atraso para suavizar a transição dos modais
+                } catch (error) {
+                    console.error("Erro ao atualizar o acesso:", error);
+                    setTimeout(() => {
+                        exibirModal("Erro", "Erro ao atualizar. Verifica as tuas permissões.");
+                    }, 300);
+                }
+            }
+        );
     };
 
     if (carregando) {
@@ -46,14 +81,45 @@ export default function UsuariosAdmin() {
     }
 
     return (
-        <div className="admin-users-page">
+        <div className="admin-users-page position-relative">
+
+            {/* MODAL COM SUPORTE A CONFIRMAÇÃO */}
+            {modalConfig.visivel && (
+                <div className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center modal-overlay-custom" style={{ zIndex: 9999 }} onClick={fecharModal}>
+                    <div className="p-4 text-center d-flex flex-column align-items-center modal-content-custom" onClick={(e) => e.stopPropagation()}>
+                        <h4 className="fw-bold mb-3 modal-title-custom">{modalConfig.titulo}</h4>
+                        <p className="text-white mb-4 modal-text-custom">{modalConfig.texto}</p>
+
+                        {/* Se onConfirm existir, exibe botões de Cancelar/Confirmar. Se não, exibe apenas OK */}
+                        {modalConfig.onConfirm ? (
+                            <div className="d-flex gap-3 w-100">
+                                <button
+                                    className="w-50 py-2 fw-bold border-0 btn-toggle-access btn-block m-0"
+                                    onClick={fecharModal}
+                                >
+                                    CANCELAR
+                                </button>
+                                <button
+                                    className="w-50 py-2 fw-bold border-0 btn-toggle-access btn-allow m-0"
+                                    onClick={modalConfig.onConfirm}
+                                >
+                                    CONFIRMAR
+                                </button>
+                            </div>
+                        ) : (
+                            <button className="w-100 py-3 fw-bold border-0 modal-btn-custom" onClick={fecharModal}>
+                                OK, ENTENDI
+                            </button>
+                        )}
+                    </div>
+                </div>
+            )}
+
             <div className="admin-users-container">
                 <header className="admin-users-header">
-                    <button className="btn-back" onClick={() => navigate("/admin")}>
-                        ← Voltar ao Painel
-                    </button>
-                    <h1 className="neon-text-cyan">Controlo de Acessos</h1>
-                    <p>Gerir quem tem autorização para utilizar os recursos do painel</p>
+                    <button className="btn-back" onClick={() => navigate("/admin")}>← Voltar ao Painel</button>
+                    <h1 className="neon-text-cyan">Controle de Acessos</h1>
+                    <p>Gerir autorizações de utilizadores</p>
                 </header>
 
                 <div className="users-table-wrapper">
@@ -72,25 +138,22 @@ export default function UsuariosAdmin() {
                                     <td>{user.nome || "Sem nome"}</td>
                                     <td>{user.email}</td>
                                     <td>
-                                        <span className={`status-badge ${user.permitido ? "allowed" : "blocked"}`}>
-                                            {user.permitido ? "Permitido" : "Bloqueado"}
+                                        <span className={`status-badge ${user.isAdmin ? "admin-status" : (user.permitido ? "allowed" : "blocked")}`}>
+                                            {user.isAdmin ? "Administrador" : (user.permitido ? "Permitido" : "Bloqueado")}
                                         </span>
                                     </td>
                                     <td>
-                                        <button
-                                            className={`btn-toggle-access ${user.permitido ? "btn-block" : "btn-allow"}`}
-                                            onClick={() => alternarAcesso(user.id, user.permitido)}
-                                        >
-                                            {user.permitido ? "Revogar Acesso" : "Permitir Acesso"}
-                                        </button>
+                                        {!user.isAdmin && (
+                                            <button
+                                                className={`btn-toggle-access ${user.permitido ? "btn-block" : "btn-allow"}`}
+                                                onClick={() => alternarAcesso(user.id, user.permitido)}
+                                            >
+                                                {user.permitido ? "Revogar Acesso" : "Permitir Acesso"}
+                                            </button>
+                                        )}
                                     </td>
                                 </tr>
                             ))}
-                            {usuarios.length === 0 && (
-                                <tr>
-                                    <td colSpan="4" className="no-users">Nenhum utilizador encontrado.</td>
-                                </tr>
-                            )}
                         </tbody>
                     </table>
                 </div>
