@@ -9,13 +9,24 @@ export default function Login() {
     const navigate = useNavigate();
     const [carregando, setCarregando] = useState(true);
 
+    // Novo estado para controlar o modal personalizado
+    const [modalConfig, setModalConfig] = useState({ visivel: false, titulo: "", texto: "" });
+
+    const exibirModal = (titulo, texto) => {
+        setModalConfig({ visivel: true, titulo, texto });
+    };
+
+    const fecharModal = () => {
+        setModalConfig({ visivel: false, titulo: "", texto: "" });
+    };
+
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             if (user) {
                 const userRef = ref(db, `usuarios/${user.uid}`);
                 const snapshot = await get(userRef);
 
-                // VALIDAÇÃO DIRETA PELO BANCO DE DADOS PARA TODOS OS USUÁRIOS
+                // VALIDAÇÃO DIRETA PELO BANCO DE DADOS PARA TODOS OS UTILIZADORES
                 if (snapshot.exists()) {
                     const userData = snapshot.val();
 
@@ -23,11 +34,11 @@ export default function Login() {
                         navigate("/admin");
                     } else {
                         await signOut(auth);
-                        alert("Acesso restrito! O seu usuário não tem permissão para acessar o painel.");
+                        exibirModal("Acesso Restrito", "O teu utilizador não tem permissão para aceder ao painel.");
                         setCarregando(false);
                     }
                 } else {
-                    // Se for o primeiro login, cria o registro totalmente bloqueado e sem privilégios
+                    // Se for o primeiro login, cria o registo totalmente bloqueado e sem privilégios
                     await set(userRef, {
                         nome: user.displayName || "Sem Nome",
                         email: user.email,
@@ -36,7 +47,7 @@ export default function Login() {
                     });
 
                     await signOut(auth);
-                    alert("Conta registrada com sucesso! Aguarde a aprovação do administrador para poder entrar.");
+                    exibirModal("Conta Registada", "Conta registada com sucesso! Aguarda a aprovação do administrador para poderes entrar.");
                     setCarregando(false);
                 }
             } else {
@@ -51,8 +62,8 @@ export default function Login() {
         try {
             await signInWithPopup(auth, provider);
         } catch (error) {
-            console.error("Erro ao logar:", error);
-            alert("Falha na conexão com o Google. Verifique a sua internet ou desative os bloqueadores de anúncios.");
+            console.error("Erro ao iniciar sessão:", error);
+            exibirModal("Erro de Conexão", "Falha na ligação com o Google. Verifica a tua internet ou desativa os bloqueadores de anúncios.");
         }
     };
 
@@ -61,7 +72,21 @@ export default function Login() {
     }
 
     return (
-        <div className="login-page" >
+        <div className="login-page position-relative">
+
+            {/* NOVO MODAL IDÊNTICO AO PEDIDO E USUARIOSADMIN */}
+            {modalConfig.visivel && (
+                <div className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center modal-overlay-custom" style={{ zIndex: 9999 }} onClick={fecharModal}>
+                    <div className="p-4 text-center d-flex flex-column align-items-center modal-content-custom" onClick={(e) => e.stopPropagation()}>
+                        <h4 className="fw-bold mb-3 modal-title-custom">{modalConfig.titulo}</h4>
+                        <p className="text-white mb-4 modal-text-custom">{modalConfig.texto}</p>
+                        <button className="w-100 py-3 fw-bold border-0 modal-btn-custom" onClick={fecharModal}>
+                            OK, ENTENDI
+                        </button>
+                    </div>
+                </div>
+            )}
+
             <div className="login-card shadow-lg" onClick={(e) => e.stopPropagation()}>
                 <div className="login-header">
                     <h1 className="neon-text-cyan">POBREOKÊ</h1>

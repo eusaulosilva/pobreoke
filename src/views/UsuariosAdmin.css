@@ -111,6 +111,12 @@
     border: 1px solid #ef4444;
 }
 
+.status-badge.admin-status {
+    background: rgba(168, 85, 247, 0.1);
+    color: #c084fc;
+    border: 1px solid #a855f7;
+}
+
 .btn-toggle-access {
     padding: 8px 16px;
     border-radius: 8px;
@@ -170,4 +176,9 @@
         display: block;
         margin: 0 auto 15px auto;
     }
+}
+
+.users-table th:nth-child(3),
+.users-table td:nth-child(3) {
+    text-align: center;
 }
