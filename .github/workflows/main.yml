@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main  # Lembre-se de confirmar se sua branch é main ou master
+      - dev   # Branch de desenvolvimento adicionada
 
 jobs:
   build-and-deploy:
@@ -35,12 +36,24 @@ jobs:
           VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
           VITE_YOUTUBE_KEY: ${{ secrets.VITE_YOUTUBE_KEY }}
 
-      - name: 📂 Sincronizar com a Hostinger
+      - name: 📂 Sincronizar com a Hostinger (Ambiente DEV)
+        if: github.ref == 'refs/heads/dev'
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./dist/
+          server-dir: ./
+          protocol: ftp
+
+      - name: 📂 Sincronizar com a Hostinger (Ambiente MAIN/PROD)
+        if: github.ref == 'refs/heads/main'
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER_MAIN }}
+          username: ${{ secrets.FTP_USERNAME_MAIN }}
+          password: ${{ secrets.FTP_PASSWORD_MAIN }}
           local-dir: ./dist/
           server-dir: ./
           protocol: ftp
