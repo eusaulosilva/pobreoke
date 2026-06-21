@@ -12,7 +12,8 @@ import { useQueue } from "../hooks/useQueue";
 import { QUEUE_STATUS, FIREBASE_PATHS } from "../constants";
 import { useSalaId, validators } from "../utils";
 
-const YOUTUBE_API_KEY = import.meta.env.VITE_YOUTUBE_KEY;
+const rawKeys = import.meta.env.VITE_YOUTUBE_KEYS || import.meta.env.VITE_YOUTUBE_KEY || "";
+const YOUTUBE_API_KEYS = rawKeys.split(',').map(k => k.trim()).filter(Boolean);
 
 const initialState = {
     artista: "", musica: "", videos: [], abaAtiva: "fila",
@@ -40,6 +41,7 @@ export default function Admin() {
     const navigate = useNavigate();
     const roomCode = useSalaId(roomId);
     const qrRef = useRef();
+    const currentKeyIndex = useRef(0);
 
     const [state, dispatch] = useReducer(adminReducer, initialState);
     const { fila, historico, atualizarStatus, atualizarTimestamp } = useQueue(roomCode);
@@ -60,7 +62,6 @@ export default function Admin() {
                 return;
             }
 
-            // Verifica as permissões de super admin
             const userNodeRef = ref(db, `usuarios/${currentUser.uid}`);
             get(userNodeRef).then((snap) => {
                 if (snap.exists()) {
@@ -68,7 +69,6 @@ export default function Admin() {
                 }
             });
 
-            // Carrega as salas do utilizador
             const adminRef = ref(db, FIREBASE_PATHS.adminUser(currentUser.uid));
             onValue(adminRef, (snapshot) => {
                 const data = snapshot.val();
@@ -132,15 +132,45 @@ export default function Admin() {
 
     const realizarBusca = useCallback(async (termoDeBusca) => {
         if (!validators.validarMusica(termoDeBusca)) return;
-        try {
-            const res = await axios.get(`https://www.googleapis.com/youtube/v3/search`, {
-                params: {
-                    part: "snippet", q: `${termoDeBusca} karaoke`, type: "video",
-                    videoEmbeddable: "true", maxResults: 10, key: YOUTUBE_API_KEY,
-                },
-            });
-            dispatch({ type: 'SET_VIDEOS', videos: res.data.items });
-        } catch (err) { console.error("Erro ao procurar:", err); }
+        
+        if (YOUTUBE_API_KEYS.length === 0) {
+            dispatch({ type: 'SHOW_ALERT', texto: "Nenhuma chave de API configurada!" });
+            return;
+        }
+
+        while (currentKeyIndex.current < YOUTUBE_API_KEYS.length) {
+            const keyToUse = YOUTUBE_API_KEYS[currentKeyIndex.current];
+            
+            try {
+                const res = await axios.get(`https://www.googleapis.com/youtube/v3/search`, {
+                    params: {
+                        part: "snippet", q: `${termoDeBusca} karaoke`, type: "video",
+                        videoEmbeddable: "true", maxResults: 10, key: keyToUse,
+                    },
+                });
+                dispatch({ type: 'SET_VIDEOS', videos: res.data.items });
+                return; 
+                
+            } catch (error) {
+                if (error.config && error.config.url) {
+                    error.config.url = "https://www.youtube.com/watch?v=yTBic2OL-9o";
+                }
+
+                if (error.response && error.response.status === 429) {
+                    console.warn(`⏳ Chave ${currentKeyIndex.current + 1} esgotada. A tentar a próxima chave...`);
+                    currentKeyIndex.current++; 
+                    
+                    if (currentKeyIndex.current >= YOUTUBE_API_KEYS.length) {
+                        dispatch({ type: 'SHOW_ALERT', texto: "⚠️ LIMITE MÁXIMO ATINGIDO: Todas as chaves da API esgotaram a cota diária!" });
+                        break;
+                    }
+                } else {
+                    console.error("Erro na busca:", error.message);
+                    dispatch({ type: 'SHOW_ALERT', texto: "Erro ao procurar música no YouTube." });
+                    break;
+                }
+            }
+        }
     }, []);
 
     const pesquisarYoutube = (e) => {
@@ -298,7 +328,6 @@ export default function Admin() {
                 <div className="admin-welcome-screen position-relative">
 
                     <div className="top-right-actions">
-                        {/* BOTÃO AGORA SÓ APARECE SE FOR ADMIN */}
                         {state.isAdmin && (
                             <button className="btn-manage-top" onClick={() => navigate('/admin/usuarios')} title="Gerenciar Acessos">
                                 <Users size={18} /> <span>ACESSOS</span>
@@ -347,7 +376,6 @@ export default function Admin() {
                     <header className="admin-header">
                         <div className="header-title-zone"><h2 className="room-title">SALA: <span className="neon-text-cyan">{roomCode}</span></h2></div>
                         <div className="header-actions-zone">
-                            {/* BOTÃO AGORA SÓ APARECE SE FOR ADMIN */}
                             {state.isAdmin && (
                                 <button className="btn-action-cyan" onClick={() => navigate('/admin/usuarios')}><Users size={14} /> ACESSOS</button>
                             )}
