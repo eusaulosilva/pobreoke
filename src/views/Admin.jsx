@@ -15,6 +15,7 @@ import { useSalaId, validators } from "../utils";
 const rawKeys = import.meta.env.VITE_YOUTUBE_KEYS || import.meta.env.VITE_YOUTUBE_KEY || "";
 const YOUTUBE_API_KEYS = rawKeys.split(',').map(k => k.trim()).filter(Boolean);
 
+
 const initialState = {
     artista: "", musica: "", videos: [], abaAtiva: "fila",
     modalAberto: false, userRooms: [], customCode: "",
