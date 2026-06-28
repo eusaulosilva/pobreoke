@@ -183,9 +183,9 @@ export default function Admin() {
         if (cantandoAgora) atualizarStatus(cantandoAgora.id, QUEUE_STATUS.FINALIZADO);
         atualizarStatus(itemClicado.id, QUEUE_STATUS.INICIADO);
 
+        // Preenche o input sem realizar a busca automática
         dispatch({ type: 'SET_BUSCA', artista: "", musica: itemClicado.musica });
-        realizarBusca(`${itemClicado.musica}`);
-    }, [fila, atualizarStatus, realizarBusca]);
+    }, [fila, atualizarStatus]);
 
     const removerItemDaFila = useCallback((idRemovido) => {
         const itemSendoRemovido = fila.find(item => item.id === idRemovido);
