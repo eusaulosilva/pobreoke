@@ -15,7 +15,6 @@ import { useSalaId, validators } from "../utils";
 const rawKeys = import.meta.env.VITE_YOUTUBE_KEYS || import.meta.env.VITE_YOUTUBE_KEY || "";
 const YOUTUBE_API_KEYS = rawKeys.split(',').map(k => k.trim()).filter(Boolean);
 
-
 const initialState = {
     artista: "", musica: "", videos: [], abaAtiva: "fila",
     modalAberto: false, userRooms: [], customCode: "",
@@ -133,7 +132,7 @@ export default function Admin() {
 
     const realizarBusca = useCallback(async (termoDeBusca) => {
         if (!validators.validarMusica(termoDeBusca)) return;
-        
+
         if (YOUTUBE_API_KEYS.length === 0) {
             dispatch({ type: 'SHOW_ALERT', texto: "Nenhuma chave de API configurada!" });
             return;
@@ -141,7 +140,7 @@ export default function Admin() {
 
         while (currentKeyIndex.current < YOUTUBE_API_KEYS.length) {
             const keyToUse = YOUTUBE_API_KEYS[currentKeyIndex.current];
-            
+
             try {
                 const res = await axios.get(`https://www.googleapis.com/youtube/v3/search`, {
                     params: {
@@ -150,8 +149,8 @@ export default function Admin() {
                     },
                 });
                 dispatch({ type: 'SET_VIDEOS', videos: res.data.items });
-                return; 
-                
+                return;
+
             } catch (error) {
                 if (error.config && error.config.url) {
                     error.config.url = "https://www.youtube.com/watch?v=yTBic2OL-9o";
@@ -159,8 +158,8 @@ export default function Admin() {
 
                 if (error.response && error.response.status === 429) {
                     console.warn(`⏳ Chave ${currentKeyIndex.current + 1} esgotada. A tentar a próxima chave...`);
-                    currentKeyIndex.current++; 
-                    
+                    currentKeyIndex.current++;
+
                     if (currentKeyIndex.current >= YOUTUBE_API_KEYS.length) {
                         dispatch({ type: 'SHOW_ALERT', texto: "⚠️ LIMITE MÁXIMO ATINGIDO: Todas as chaves da API esgotaram a cota diária!" });
                         break;
@@ -205,13 +204,19 @@ export default function Admin() {
         return (naFila + noHistorico) > 1;
     }, [fila, historico]);
 
-    const encerrarNoite = () => {
+    const encerrarNoite = async () => {
         if (!roomCode) return;
         if (window.confirm(`ENCERRAR NOITE? A sala ${roomCode} será apagada.`)) {
-            remove(ref(db, FIREBASE_PATHS.sala(roomCode)));
-            remove(ref(db, `admins/${auth.currentUser?.uid}/salas/${roomCode}`));
-            navigate('/admin');
-            dispatch({ type: 'RESET_BUSCA' });
+            try {
+                await remove(ref(db, FIREBASE_PATHS.sala(roomCode)));
+                await remove(ref(db, `admins/${auth.currentUser?.uid}/salas/${roomCode}`));
+
+                navigate('/admin');
+                dispatch({ type: 'RESET_BUSCA' });
+            } catch (error) {
+                console.error("Erro ao encerrar a noite:", error);
+                dispatch({ type: 'SHOW_ALERT', texto: "Ocorreu um erro ao tentar apagar a sala. Tente novamente." });
+            }
         }
     };
 
