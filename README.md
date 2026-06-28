@@ -1,16 +1,42 @@
-# React + Vite
-
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```diff
++ # Pobreokê 🎤
++ 
++ Plataforma de gestão de filas de karaokê em tempo real, desenvolvida para proporcionar a melhor experiência e organização na Campus Party 2026.
++ 
++ ## 🚀 Funcionalidades
++ 
++ - Gestão e ordenação de fila em tempo real.
++ - Sincronização instantânea de salas e pedidos.
++ - Interface dedicada para os cantores solicitarem músicas.
++ - Painel administrativo para controlo e visualização da fila.
++ 
++ ## 🛠️ Tecnologias Utilizadas
++ 
++ - **Front-end:** React, JavaScript, Vite
++ - **Back-end e Base de Dados:** Firebase (Firestore)
++ 
++ ## ⚙️ Como executar o projeto
++ 
++ 1. Clona este repositório:
++    ```bash
++    git clone [https://github.com/eusaulosilva/pobreoke.git](https://github.com/eusaulosilva/pobreoke.git)
++    ```
++ 2. Acede à pasta do projeto:
++    ```bash
++    cd pobreoke
++    ```
++ 3. Instala as dependências:
++    ```bash
++    npm install
++    ```
++ 4. Configura as variáveis de ambiente:
++    - Renomeia o ficheiro `.env.example` para `.env`.
++    - Preenche o ficheiro com as tuas credenciais de configuração do Firebase.
++ 5. Inicia o servidor de desenvolvimento:
++    ```bash
++    npm run dev
++    ```
++ 
++ ## 👨‍💻 Autor
++ 
++ **Saulo Silva** + Desenvolvedor Full Stack e Mobile
