@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ref, onValue, remove, update, push } from 'firebase/database';
+import { ref, onValue, remove, update, push, get } from 'firebase/database';
 import { db } from '../firebase';
 import { QUEUE_STATUS, FIREBASE_PATHS } from '../constants';
 
@@ -49,6 +49,14 @@ export function useQueue(roomId) {
     const adicionarAFila = async (novoItem) => {
         if (!roomId) return { success: false, error: "Sala não definida" };
         try {
+            // VERIFICAÇÃO EM TEMPO REAL: Busca o status atualizado no banco antes de gravar
+            const configRef = ref(db, FIREBASE_PATHS.filaFechada(roomId));
+            const snapshot = await get(configRef);
+            if (snapshot.exists() && snapshot.val() === true) {
+                return { success: false, error: "fila_fechada" }; // Impede a gravação e avisa
+            }
+
+            // Se a fila estiver aberta, prossegue com a gravação
             const filaRef = ref(db, FIREBASE_PATHS.fila(roomId));
             await push(filaRef, {
                 ...novoItem,
