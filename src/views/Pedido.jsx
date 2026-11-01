@@ -14,19 +14,17 @@ import "./Pedido.css";
 export default function Pedido() {
     const { roomId } = useParams();
     const navigate = useNavigate();
-
     const salaIdFormatado = useSalaId(roomId);
     const { fila, adicionarAFila: adicionarItemNaFila } = useQueue(salaIdFormatado);
 
     const [nome, setNome] = useState("");
     const [musica, setMusica] = useState("");
     const [uid, setUid] = useState("");
-
     const [noPalco, setNoPalco] = useState(null);
     const [inputCodigo, setInputCodigo] = useState("");
     const [roomExists, setRoomExists] = useState(true);
     const [filaFechada, setFilaFechada] = useState(false);
-
+    
     const [modalConfig, setModalConfig] = useState({ visivel: false, titulo: "", texto: "" });
 
     const exibirModal = (titulo, texto) => {
@@ -58,7 +56,6 @@ export default function Pedido() {
         setUid(savedUid);
 
         return () => unsubRoom();
-
     }, [salaIdFormatado]);
 
     useEffect(() => {
@@ -113,12 +110,11 @@ export default function Pedido() {
                             maxLength={6}
                             autoFocus
                         />
-                        <button className="btn-status-action">ENTRAR NA SALA 🎤</button>
+                        <button className="btn-status-action">ENTRAR NA SALA  </button>
                     </form>
-
                     <div className="back-container">
                         <button className="btn-back-home" onClick={() => navigate("/")}>
-                            <span className="arrow">←</span> VOLTAR AO INÍCIO
+                            <span className="arrow"> </span> VOLTAR AO INÍCIO
                         </button>
                     </div>
                 </div>
@@ -131,31 +127,33 @@ export default function Pedido() {
 
     const adicionarAFila = async (e) => {
         e.preventDefault();
-
         if (!validators.validarNome(nome) || !validators.validarMusica(musica)) {
             exibirModal("Aviso", "Por favor, preenche o teu nome e a música antes de pedir.");
             return;
         }
-
         if (filaFechada) {
             exibirModal("Fila Fechada", "A fila de pedidos está fechada no momento pelo DJ!");
             return;
         }
-
         if (bloqueado) {
             exibirModal("Ação bloqueada", "Já estás na fila de espera! Canta a tua música antes de pedir outra.");
             return;
         }
-
-        const { success } = await adicionarItemNaFila({
+        
+        // Pega a resposta completa do hook
+        const resposta = await adicionarItemNaFila({
             uid,
             nome: nome.trim(),
             musica: musica.trim(),
             status: QUEUE_STATUS.AGUARDANDO
         });
 
-        if (success) {
+        // Trata os cenários retornados
+        if (resposta.success) {
             setMusica("");
+        } else if (resposta.error === "fila_fechada") {
+            setFilaFechada(true); // Força a atualização da tela do infrator
+            exibirModal("Fila Fechada", "O DJ acabou de fechar a fila. Não é possível enviar mais pedidos.");
         } else {
             exibirModal("Erro", "Falha ao enviar pedido. Tenta novamente.");
         }
@@ -163,7 +161,6 @@ export default function Pedido() {
 
     return (
         <div className="pedido-bg-black position-relative min-vh-100">
-
             {modalConfig.visivel && (
                 <div className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center modal-overlay-custom" onClick={fecharModal}>
                     <div className="p-4 text-center d-flex flex-column align-items-center modal-content-custom" onClick={(e) => e.stopPropagation()}>
@@ -183,7 +180,7 @@ export default function Pedido() {
                     ) : (
                         <div className="text-center text-white py-3">A carregar palco...</div>
                     )}
-
+                    
                     <Formulario
                         nome={nome}
                         setNome={setNome}

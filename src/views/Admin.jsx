@@ -6,7 +6,7 @@ import "./Admin.css";
 import { useNavigate, useParams } from "react-router-dom";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { QRCodeCanvas } from "qrcode.react";
-import { Power, LogOut, QrCode, Search, Square, Monitor, Link, List, Shuffle, Lock, Unlock, Users } from 'lucide-react';
+import { Power, LogOut, QrCode, Search, Square, Monitor, Link, List, Shuffle, Lock, Unlock, Users, Timer } from 'lucide-react';
 import ItemFila from "../components/ItemFila";
 import { useQueue } from "../hooks/useQueue";
 import { QUEUE_STATUS, FIREBASE_PATHS } from "../constants";
@@ -14,6 +14,18 @@ import { useSalaId, validators } from "../utils";
 
 const rawKeys = import.meta.env.VITE_YOUTUBE_KEYS || import.meta.env.VITE_YOUTUBE_KEY || "";
 const YOUTUBE_API_KEYS = rawKeys.split(',').map(k => k.trim()).filter(Boolean);
+
+const formatarDuracaoYoutube = (duracao) => {
+    if (!duracao) return "";
+    const match = duracao.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
+    const horas = (parseInt(match[1]) || 0);
+    const minutos = (parseInt(match[2]) || 0);
+    const segundos = (parseInt(match[3]) || 0);
+    let tempoString = "";
+    if (horas > 0) tempoString += `${horas}:`;
+    tempoString += `${horas > 0 ? minutos.toString().padStart(2, '0') : minutos}:${segundos.toString().padStart(2, '0')}`;
+    return tempoString;
+};
 
 const initialState = {
     artista: "", musica: "", videos: [], abaAtiva: "fila",
@@ -42,7 +54,6 @@ export default function Admin() {
     const roomCode = useSalaId(roomId);
     const qrRef = useRef();
     const currentKeyIndex = useRef(0);
-
     const [state, dispatch] = useReducer(adminReducer, initialState);
     const { fila, historico, atualizarStatus, atualizarTimestamp } = useQueue(roomCode);
 
@@ -61,14 +72,12 @@ export default function Admin() {
                 navigate("/login", { replace: true });
                 return;
             }
-
             const userNodeRef = ref(db, `usuarios/${currentUser.uid}`);
             get(userNodeRef).then((snap) => {
                 if (snap.exists()) {
                     dispatch({ type: 'SET_UI', payload: { isAdmin: snap.val().isAdmin === true } });
                 }
             });
-
             const adminRef = ref(db, FIREBASE_PATHS.adminUser(currentUser.uid));
             onValue(adminRef, (snapshot) => {
                 const data = snapshot.val();
@@ -95,26 +104,21 @@ export default function Admin() {
             dispatch({ type: 'SHOW_ALERT', texto: "Atenção: Atingiste o limite máximo de 3 salas ativas!" });
             return;
         }
-
         let codigoFinal = codigoFornecido.trim().toUpperCase();
         if (!codigoFinal) codigoFinal = Math.random().toString(36).substring(2, 8).toUpperCase();
-
         if (!validators.validarCodigo(codigoFinal)) {
             dispatch({ type: 'SHOW_ALERT', texto: "O código da sala deve ter entre 3 e 6 caracteres." });
             return;
         }
-
         try {
             const salaCheck = await get(ref(db, FIREBASE_PATHS.sala(codigoFinal)));
             if (salaCheck.exists()) {
                 dispatch({ type: 'SHOW_ALERT', texto: "Este código de sala já está em uso! Tente outro nome." });
                 return;
             }
-
             const uid = auth.currentUser.uid;
             await update(ref(db, FIREBASE_PATHS.adminSalas(uid)), { [codigoFinal]: true });
             await set(ref(db, FIREBASE_PATHS.configuracao(codigoFinal)), { adminId: uid, criadoEm: Date.now(), filaFechada: false });
-
             navigate(`/admin/${codigoFinal}`);
             dispatch({ type: 'SET_UI', payload: { customCode: "" } });
         } catch (err) {
@@ -132,36 +136,41 @@ export default function Admin() {
 
     const realizarBusca = useCallback(async (termoDeBusca) => {
         if (!validators.validarMusica(termoDeBusca)) return;
-
         if (YOUTUBE_API_KEYS.length === 0) {
             dispatch({ type: 'SHOW_ALERT', texto: "Nenhuma chave de API configurada!" });
             return;
         }
-
         while (currentKeyIndex.current < YOUTUBE_API_KEYS.length) {
             const keyToUse = YOUTUBE_API_KEYS[currentKeyIndex.current];
-
             try {
-                const res = await axios.get(`https://www.googleapis.com/youtube/v3/search`, {
+                const resSearch = await axios.get(`https://www.googleapis.com/youtube/v3/search`, {
                     params: {
                         part: "snippet", q: `${termoDeBusca} karaoke`, type: "video",
                         videoEmbeddable: "true", maxResults: 10, key: keyToUse,
                     },
                 });
-                dispatch({ type: 'SET_VIDEOS', videos: res.data.items });
-                return;
 
+                const videoIds = resSearch.data.items.map(item => item.id.videoId).join(',');
+                if (videoIds) {
+                    const resDetails = await axios.get(`https://www.googleapis.com/youtube/v3/videos`, {
+                        params: {
+                            part: "snippet,contentDetails", id: videoIds, key: keyToUse,
+                        }
+                    });
+                    dispatch({ type: 'SET_VIDEOS', videos: resDetails.data.items });
+                } else {
+                    dispatch({ type: 'SET_VIDEOS', videos: [] });
+                }
+                return;
             } catch (error) {
                 if (error.config && error.config.url) {
                     error.config.url = "https://www.youtube.com/watch?v=yTBic2OL-9o";
                 }
-
                 if (error.response && error.response.status === 429) {
-                    console.warn(`⏳ Chave ${currentKeyIndex.current + 1} esgotada. A tentar a próxima chave...`);
+                    console.warn(`Chave ${currentKeyIndex.current + 1} esgotada. A tentar a próxima chave...`);
                     currentKeyIndex.current++;
-
                     if (currentKeyIndex.current >= YOUTUBE_API_KEYS.length) {
-                        dispatch({ type: 'SHOW_ALERT', texto: "⚠️ LIMITE MÁXIMO ATINGIDO: Todas as chaves da API esgotaram a cota diária!" });
+                        dispatch({ type: 'SHOW_ALERT', texto: "LIMITE MÁXIMO ATINGIDO: Todas as chaves da API esgotaram a cota diária!" });
                         break;
                     }
                 } else {
@@ -182,15 +191,12 @@ export default function Admin() {
         const cantandoAgora = fila.find(item => item.status === QUEUE_STATUS.INICIADO);
         if (cantandoAgora) atualizarStatus(cantandoAgora.id, QUEUE_STATUS.FINALIZADO);
         atualizarStatus(itemClicado.id, QUEUE_STATUS.INICIADO);
-
-        // Preenche o input sem realizar a busca automática
         dispatch({ type: 'SET_BUSCA', artista: "", musica: itemClicado.musica });
     }, [fila, atualizarStatus]);
 
     const removerItemDaFila = useCallback((idRemovido) => {
         const itemSendoRemovido = fila.find(item => item.id === idRemovido);
         atualizarStatus(idRemovido, QUEUE_STATUS.FINALIZADO);
-
         if (itemSendoRemovido?.status === QUEUE_STATUS.INICIADO && roomCode) {
             update(ref(db, FIREBASE_PATHS.configuracao(roomCode)), { videoAtual: null });
             dispatch({ type: 'RESET_BUSCA' });
@@ -208,8 +214,17 @@ export default function Admin() {
         if (!roomCode) return;
         if (window.confirm(`ENCERRAR NOITE? A sala ${roomCode} será apagada.`)) {
             try {
-                await remove(ref(db, FIREBASE_PATHS.sala(roomCode)));
-                await remove(ref(db, `admins/${auth.currentUser?.uid}/salas/${roomCode}`));
+                const uid = auth.currentUser?.uid;
+
+                // Exclusão atômica: cria um objeto com tudo que deve ser nulo e apaga de uma vez só
+                const updates = {};
+                updates[FIREBASE_PATHS.sala(roomCode)] = null;
+                if (uid) {
+                    updates[`admins/${uid}/salas/${roomCode}`] = null;
+                }
+
+                // Executa a deleção simultânea
+                await update(ref(db), updates);
 
                 navigate('/admin');
                 dispatch({ type: 'RESET_BUSCA' });
@@ -232,9 +247,7 @@ export default function Admin() {
     const copiarLink = () => {
         const linkPedidos = `${window.location.origin}/sala/${roomCode}`;
         navigator.clipboard.writeText(linkPedidos);
-
         dispatch({ type: 'SET_UI', payload: { linkCopiado: true } });
-
         setTimeout(() => {
             dispatch({ type: 'SET_UI', payload: { linkCopiado: false } });
         }, 3000);
@@ -251,20 +264,16 @@ export default function Admin() {
     const aoSoltarCard = async (e, dropIndex) => {
         e.preventDefault();
         if (state.dragIndex === null || state.dragIndex === dropIndex) return;
-
         if (fila[state.dragIndex].status === QUEUE_STATUS.INICIADO || fila[dropIndex].status === QUEUE_STATUS.INICIADO) {
             dispatch({ type: 'SET_UI', payload: { dragIndex: null } });
             return;
         }
-
         const novaFila = [...fila];
         const itemArrastado = novaFila.splice(state.dragIndex, 1)[0];
         novaFila.splice(dropIndex, 0, itemArrastado);
-
         let novoTimestamp;
         const itemAnterior = novaFila[dropIndex - 1];
         const itemPosterior = novaFila[dropIndex + 1];
-
         if (!itemAnterior || itemAnterior.status === QUEUE_STATUS.INICIADO) {
             if (itemPosterior) {
                 novoTimestamp = itemPosterior.timestamp - 1000;
@@ -276,9 +285,7 @@ export default function Admin() {
         } else {
             novoTimestamp = (itemAnterior.timestamp + itemPosterior.timestamp) / 2;
         }
-
         dispatch({ type: 'SET_UI', payload: { dragIndex: null } });
-
         try {
             await atualizarTimestamp(itemArrastado.id, novoTimestamp);
         } catch (error) {
@@ -295,7 +302,6 @@ export default function Admin() {
 
     return (
         <div className="admin-page-container">
-
             {state.alertaConfig.visivel && (
                 <div className="modal-overlay" onClick={() => dispatch({ type: 'HIDE_ALERT' })}>
                     <div className="modal-content-neon text-center p-4" onClick={e => e.stopPropagation()}>
@@ -305,7 +311,6 @@ export default function Admin() {
                     </div>
                 </div>
             )}
-
             {state.modalAberto && (
                 <div className="modal-overlay" onClick={() => dispatch({ type: 'SET_UI', payload: { modalAberto: false } })}>
                     <div className="modal-content-neon" onClick={(e) => e.stopPropagation()}>
@@ -320,7 +325,7 @@ export default function Admin() {
                                 <button className="btn-copy-neon w-100" onClick={copiarLink}>COPIAR LINK</button>
                                 {state.linkCopiado && (
                                     <p className="text-success fw-bold mt-2 mb-0" style={{ fontSize: '0.9rem', animation: 'fadeIn 0.3s ease-in-out' }}>
-                                        ✓ Link copiado com sucesso!
+                                        Link copiado com sucesso!
                                     </p>
                                 )}
                             </div>
@@ -329,10 +334,8 @@ export default function Admin() {
                     </div>
                 </div>
             )}
-
             {!roomCode ? (
                 <div className="admin-welcome-screen position-relative">
-
                     <div className="top-right-actions">
                         {state.isAdmin && (
                             <button className="btn-manage-top" onClick={() => navigate('/admin/usuarios')} title="Gerenciar Acessos">
@@ -343,7 +346,6 @@ export default function Admin() {
                             <LogOut size={18} /> <span>SAIR</span>
                         </button>
                     </div>
-
                     <div className="salas-container w-100">
                         <div className="text-center mb-5">
                             <h2 className="welcome-title mb-2">GERENCIAR <span className="text-neon-pink">SALAS</span></h2>
@@ -393,7 +395,6 @@ export default function Admin() {
                             <button className="btn-action-red" onClick={deslogar}><LogOut size={16} /> SAIR</button>
                         </div>
                     </header>
-
                     <div className="row g-4 flex-grow-1 admin-main-row">
                         <div className="col-lg-6 col-12 d-flex flex-column">
                             <div className="admin-glass-panel">
@@ -455,7 +456,6 @@ export default function Admin() {
                                 </div>
                             </div>
                         </div>
-
                         <div className="col-lg-6 col-12 d-flex flex-column">
                             <div className="admin-glass-panel bg-dark-panel">
                                 <div className="panel-header d-flex justify-content-between align-items-center">
@@ -469,11 +469,14 @@ export default function Admin() {
                                         <button className="btn-photo-purple-search w-100 d-flex align-items-center justify-content-center gap-2"><Search size={18} /> BUSCAR</button>
                                     </form>
                                     {state.videos.map(v => (
-                                        <div key={v.id.videoId} className="yt-video-row" onClick={() => darPlayNoDisplay(v.id.videoId)}>
+                                        <div key={v.id} className="yt-video-row" onClick={() => darPlayNoDisplay(v.id)}>
                                             <img src={v.snippet.thumbnails.default.url} alt="thumb" />
-                                            <div className="ms-3">
-                                                <p className="yt-video-title m-0">{v.snippet.title}</p>
-                                                <small className="text-info small">ENVIAR À TV</small>
+                                            <div className="ms-3 d-flex flex-column justify-content-center">
+                                                <p className="yt-video-title m-0 mb-1">{v.snippet.title}</p>
+                                                <div className="yt-video-duration">
+                                                    <Timer size={14} />
+                                                    <span>{formatarDuracaoYoutube(v.contentDetails?.duration)}</span>
+                                                </div>
                                             </div>
                                         </div>
                                     ))}
